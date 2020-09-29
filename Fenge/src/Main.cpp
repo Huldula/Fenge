@@ -1,6 +1,6 @@
-#include <iostream>
+#include "Core/Log.h"
 
 int main() {
-	std::cout << "Hello World!\n";
+	LOG("Hello World!");
 	return 0;
 }
