@@ -1,0 +1,82 @@
+#include "Token.h"
+#include <string>
+
+namespace fenge {
+
+Token::Token(Type type, void* value) : type_(type), value_(value) { }
+
+Token::~Token() {
+	switch (type_)
+	{
+	case Type::INT:
+		delete (int*)value_;
+		break;
+	case Type::FLOAT:
+		delete (double*)value_;
+		break;
+	case Type::KEYWORD:
+		delete (Keyword*)value_;
+		break;
+	case Type::IDENTIFIER:
+		delete (std::string*)value_;
+		break;
+	}
+}
+
+const bool Token::hasValue() const {
+	return value_ != nullptr;
+}
+
+const size_t Token::valueSize() const {
+	switch (type_)
+	{
+	case Type::INT:
+		return sizeof(int);
+	case Type::FLOAT:
+		return sizeof(double);
+	case Type::KEYWORD:
+		return sizeof(Keyword);
+	case Type::IDENTIFIER:
+		return ((std::string*)value_)->size();
+	default:
+		return 0;
+	}
+}
+
+const Token::Type Token::type() const {
+	return type_;
+}
+
+const std::string Token::toString() const {
+	std::string out = "[";
+	switch (type_) {
+#define T(name, str) \
+	case Token::Type::name: \
+		out += str; \
+		break;
+	TOKEN_TO_STRING_LIST(T)
+#undef T
+	}
+	out += ':';
+	switch (type_) {
+	case Type::INT:
+		out += std::to_string(*(int*)value_);
+		break;
+	case Type::FLOAT:
+		out += std::to_string(*(double*)value_);
+		break;
+	case Type::KEYWORD:
+		out += "_";
+		break;
+	case Type::IDENTIFIER:
+		out += *((std::string*)value_);
+		break;
+	default:
+		out += "_";
+		break;
+	}
+	out += "]";
+	return out;
+}
+
+} // namespace fenge
