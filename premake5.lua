@@ -1,3 +1,5 @@
+include "./vendor/premake/premake_customization/solution_items.lua"
+
 workspace "Fenge"
 	architecture "x64"
 
@@ -5,6 +7,11 @@ workspace "Fenge"
 	{
 		"Debug",
 		"Release"
+	}
+
+	solution_items
+	{
+		".editorconfig"
 	}
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
