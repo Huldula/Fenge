@@ -7,11 +7,6 @@ workspace "Fenge"
 		"Release"
 	}
 
-	solution_items
-	{
-		".editorconfig"
-	}
-
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 project "Fenge"
