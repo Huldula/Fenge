@@ -1,7 +1,8 @@
 #pragma once
 
+#include "fgpch.h"
+
 #include "Macros.h"
-#include "Log.h"
 
 namespace fenge {
 

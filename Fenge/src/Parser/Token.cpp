@@ -1,5 +1,6 @@
+#include "fgpch.h"
+
 #include "Token.h"
-#include <string>
 
 namespace fenge {
 

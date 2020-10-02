@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fgpch.h"
+
 #define WHITESPACE_CHAR_LIST(T) T(' ') \
 	T('\t') \
 	T('\r') \

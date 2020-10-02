@@ -24,13 +24,19 @@ project "Fenge"
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("obj/" .. outputdir .. "/%{prj.name}")
 
+	pchheader "fgpch.h"
+	pchsource "Fenge/src/fgpch.cpp"
+
 	files
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp"
 	}
 
-	includedirs {}
+	includedirs
+	{
+		"%{prj.name}/src"
+	}
 
 	filter "system:windows"
 		cppdialect "C++latest"

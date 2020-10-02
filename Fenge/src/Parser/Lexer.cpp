@@ -1,3 +1,5 @@
+#include "fgpch.h"
+
 #include "Lexer.h"
 
 namespace fenge {
@@ -54,7 +56,7 @@ LexerResult* Lexer::generateTokens() {
 	return result;
 }
 
-inline Token* Lexer::makeNumber() {
+Token* Lexer::makeNumber() {
 	int intValue = 0;
 	while (IS_DECIMAL_CHAR(currentChar_)) {
 		intValue = intValue * 10 + (currentChar_ - '0');
@@ -75,6 +77,25 @@ inline Token* Lexer::makeNumber() {
 	} else {
 		return new Token(Token::Type::INT, new int(intValue));
 	}
+}
+
+LexerResult::LexerResult() = default;
+LexerResult::~LexerResult() {
+	for (Token* t : tokens)
+		delete t;
+}
+
+std::string LexerResult::toString() const {
+	std::string out;
+	if (error != Error::NO_ERROR) {
+		out = ErrorMessageGenerator::fromError(error);
+	}
+	else {
+		for (const Token* t : tokens) {
+			out += t->toString();
+		}
+	}
+	return out;
 }
 
 } // namespace fenge

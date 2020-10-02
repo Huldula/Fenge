@@ -1,8 +1,5 @@
 #pragma once
 
-#include <string>
-#include "../Core/Log.h"
-
 namespace fenge {
 
 class Token

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include "fgpch.h"
 
 #ifdef FG_DEBUG
 	#define LOG(x) std::cerr << x << "\n";

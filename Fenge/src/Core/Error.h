@@ -1,5 +1,7 @@
 #pragma once
 
+#include "fgpch.h"
+
 namespace fenge {
 
 enum class Error {

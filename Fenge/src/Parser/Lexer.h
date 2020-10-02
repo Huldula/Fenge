@@ -1,35 +1,19 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include "../Core/Position.h"
-#include "../Core/Log.h"
-#include "../Core/Error.h"
+#include "Core/Position.h"
+#include "Core/Error.h"
 #include "Token.h"
 
 namespace fenge {
 
 struct LexerResult {
-	LexerResult() = default;
-	~LexerResult() {
-		for (Token* t : tokens) 
-			delete t;
-	}
+	LexerResult();
+	~LexerResult();
 
 	Error error = Error::NO_ERROR;
 	std::vector<Token*> tokens;
 
-	const inline std::string toString() const {
-		std::string out;
-		if (error != Error::NO_ERROR) {
-			out = ErrorMessageGenerator::fromError(error);
-		} else {
-			for (const Token* t : tokens) {
-				out += t->toString();
-			}
-		}
-		return out;
-	}
+	std::string toString() const;
 };
 
 
