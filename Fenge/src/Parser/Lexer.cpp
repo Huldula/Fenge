@@ -47,13 +47,13 @@ LexerResult* Lexer::generateTokens() {
 		} else if (currentChar_ == ')') {
 			pushBackAdvance(result, new Token(Token::Type::RPAREN, nullptr));
 		} else {
-			result->error = Error(Error::ILLEGAL_CHAR);
+			result->error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;
 		}
 
 		if (result->tokens.size() > 0 &&
 			result->tokens[result->tokens.size() - 1]->type() == Token::Type::ILLEGAL) {
-			result->error = Error(Error::ILLEGAL_CHAR);
+			result->error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;
 		}
 	}
@@ -97,6 +97,9 @@ Token* Lexer::makeIdentifier() {
 	}
 }
 
+
+
+
 LexerResult::LexerResult() = default;
 LexerResult::~LexerResult() {
 	for (const Token* t : tokens)
@@ -105,10 +108,9 @@ LexerResult::~LexerResult() {
 
 std::string LexerResult::toString() const {
 	std::string out;
-	if (error != Error::NO_ERROR) {
+	if (error.code != ErrorCode::NO_ERROR) {
 		out = ErrorMessageGenerator::fromError(error);
-	}
-	else {
+	} else {
 		for (const Token* t : tokens) {
 			out += t->toString();
 		}
