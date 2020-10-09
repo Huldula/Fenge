@@ -1,0 +1,36 @@
+statements:			statement*
+
+statement:			KEYWORD:RETURN expr?
+
+
+
+
+
+assign:				logic-or
+					left-side EQUALS assign
+
+logic-or:			logic-and ((KEYWORD:OR) logic-and)*
+
+logic-and:			comp-eq ((KEYWORD:AND) comp-eq)*
+
+comp-eq:			comp-rela ((EE|NE) comp-rela)*
+
+comp-rela:			add ((LT|GT|LTE|GTE) add)*
+
+math-add:			math-mul ((PLUS|MINUS) math-mul)*
+
+math-mul:			unary ((MUL|DIV|MOD) unary)*
+
+unary:				(PLUS|MINUS) unary
+					NOT unary
+
+
+
+primary:			function // TODO if etc
+					simple
+
+simple:				LPAREN expr RPAREN // TODO nicht expr
+					INT
+					FLOAT
+					STRING
+					IDENTIFIER
