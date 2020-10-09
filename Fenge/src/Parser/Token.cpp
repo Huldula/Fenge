@@ -44,18 +44,25 @@ const size_t Token::valueSize() const {
 	}
 }
 
+Token::Keyword Token::keywordType(const std::string_view in) {
+#define T(name, str) if (in == str) { return Keyword::name; } else
+	KEYWORD_STRING_LIST(T)
+#undef T
+		return Keyword::NO_KEYWORD;
+}
+
 const Token::Type Token::type() const {
 	return type_;
 }
 
-const std::string Token::toString() const {
+[[nodiscard]] std::string Token::toString() const {
 	std::string out = "[";
 	switch (type_) {
-#define T(name, str) \
+#define T(name) \
 	case Token::Type::name: \
-		out += str; \
+		out += #name; \
 		break;
-	TOKEN_TO_STRING_LIST(T)
+	TOKEN_LIST(T)
 #undef T
 	}
 	out += ':';
@@ -67,7 +74,14 @@ const std::string Token::toString() const {
 		out += std::to_string(*(double*)value_);
 		break;
 	case Type::KEYWORD:
-		out += "_";
+		switch (*(Keyword*)value_) {
+#define T(name) \
+			case Keyword::name: \
+				out += #name; \
+				break;
+		KEYWORD_STRING_LIST(T)
+#undef T
+		}
 		break;
 	case Type::IDENTIFIER:
 		out += *((std::string*)value_);

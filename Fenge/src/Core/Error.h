@@ -9,7 +9,7 @@ enum class Error {
 	ILLEGAL_CHAR
 };
 
-static class ErrorMessageGenerator {
+class ErrorMessageGenerator {
 public:
 	static std::string fromError(Error error) {
 		switch (error) {

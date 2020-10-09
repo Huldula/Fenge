@@ -13,12 +13,16 @@ Lexer::~Lexer() = default;
 
 void Lexer::advance() {
 	pos_.advance(currentChar_);
-	currentChar_ = input_[pos_.index()];
+	currentChar_ = input_[currentPos()];
 }
 
 inline void Lexer::pushBackAdvance(LexerResult* result, Token* t) {
 	result->tokens.push_back(t);
 	advance();
+}
+
+inline int Lexer::currentPos() const {
+	return pos_.index();
 }
 
 LexerResult* Lexer::generateTokens() {
@@ -27,7 +31,7 @@ LexerResult* Lexer::generateTokens() {
 		if (IS_WHITESPACE_CHAR(currentChar_)) {
 			advance();
 		} else if (IS_LETTER_CHAR(currentChar_)) {
-			advance();
+			result->tokens.push_back(makeIdentifier());
 		} else if (IS_DECIMAL_DOT_CHAR(currentChar_)) {
 			result->tokens.push_back(makeNumber());
 		} else if (currentChar_ == '+') {
@@ -68,9 +72,9 @@ Token* Lexer::makeNumber() {
 		if (!(IS_DECIMAL_CHAR(currentChar_))) {
 			return new Token(Token::Type::ILLEGAL, nullptr);
 		}
-		int startIndex = pos_.index() - 1;
+		int startIndex = currentPos() - 1;
 		do {
-			floatValue += (currentChar_ - '0') / pow(10, pos_.index() - startIndex);
+			floatValue += ((double)currentChar_ - '0') / pow(10, currentPos() - startIndex);
 			advance();
 		} while (IS_DECIMAL_CHAR(currentChar_));
 		return new Token(Token::Type::FLOAT, new double(floatValue));
@@ -79,9 +83,23 @@ Token* Lexer::makeNumber() {
 	}
 }
 
+Token* Lexer::makeIdentifier() {
+	const int startPos = currentPos();
+	while (IS_LETTER_DECIMAL_CHAR(currentChar_)) {
+		advance();
+	}
+	const std::string_view identifier(&input_[startPos], (size_t)currentPos() - startPos);
+	const Token::Keyword keywordType = Token::keywordType(identifier);
+	if (keywordType == Token::Keyword::NO_KEYWORD) {
+		return new Token(Token::Type::IDENTIFIER, new std::string(identifier));
+	} else {
+		return new Token(Token::Type::KEYWORD, new Token::Keyword(keywordType));
+	}
+}
+
 LexerResult::LexerResult() = default;
 LexerResult::~LexerResult() {
-	for (Token* t : tokens)
+	for (const Token* t : tokens)
 		delete t;
 }
 

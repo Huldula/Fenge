@@ -14,45 +14,53 @@ public:
 	const bool hasValue() const;
 	const size_t valueSize() const;
 
+	static Keyword keywordType(const std::string_view in);
+
 	const Type type() const;
 
-	const std::string toString() const;
+	[[nodiscard]] std::string toString() const;
 private:
 	const Type type_;
 	const void* value_;
 };
 
-#define CHAR_TOKEN_LIST(T) \
-	T(PLUS, '+') \
-	T(MINUS, '-') \
-	T(MUL, '*') \
-	T(DIV, '/') \
-	T(LPAREN, '(') \
-	T(RPAREN, ')') \
+#define TOKEN_STRING_LIST(T) \
+	T(ILLEGAL, "") \
+	T(IDENTIFIER, "") \
+	T(KEYWORD, "") \
+	T(INT, "") \
+	T(FLOAT, "") \
+	T(PLUS, "+") \
+	T(MINUS, "-") \
+	T(MUL, "*") \
+	T(DIV, "/") \
+	T(LPAREN, "(") \
+	T(RPAREN, ")") \
+	T(EOS, "\0")
 
-#define TOKEN_TO_STRING_LIST(T) \
-	T(ILLEGAL, "ILLEGAL") \
-	T(IDENTIFIER, "IDENTIFIER") \
-	T(KEYWORD, "KEYWORD") \
-	T(INT, "INT") \
-	T(FLOAT, "FLOAT") \
-	T(PLUS, "PLUS") \
-	T(MINUS, "MINUS") \
-	T(MUL, "MUL") \
-	T(DIV, "DIV") \
-	T(LPAREN, "LPAREN") \
-	T(RPAREN, "RPAREN") \
-	T(EOS, "EOS")
+#define KEYWORD_STRING_LIST(T) \
+	T(NO_KEYWORD, "") \
+	T(VAR, "var")
 
+
+#define T(name, str) Z(name)
+	#define TOKEN_LIST(Z) TOKEN_STRING_LIST(T)
+#undef T
+
+#define T(name, str) Z(name)
+	#define KEYWORD_LIST(Z) KEYWORD_STRING_LIST(T)
+#undef T
 
 enum class Token::Type {
-#define T(name, val) name,
-	TOKEN_TO_STRING_LIST(T)
+#define T(name) name,
+	TOKEN_LIST(T)
 #undef T
 };
 
 enum class Token::Keyword {
-	VAR
+#define T(name) name,
+	KEYWORD_LIST(T)
+#undef T
 };
 
 

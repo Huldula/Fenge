@@ -13,14 +13,14 @@ struct LexerResult {
 	Error error = Error::NO_ERROR;
 	std::vector<Token*> tokens;
 
-	std::string toString() const;
+	[[nodiscard]] std::string toString() const;
 };
 
 
 class Lexer
 {
 public:
-	Lexer(const std::string& input);
+	explicit Lexer(const std::string& input);
 	~Lexer();
 	LexerResult* generateTokens();
 private:
@@ -30,7 +30,9 @@ private:
 	const std::string& input_;
 
 	inline void pushBackAdvance(LexerResult* result, Token* t);
-	inline Token* makeNumber();
+	inline int currentPos() const;
+	Token* makeNumber();
+	Token* makeIdentifier();
 };
 
 
