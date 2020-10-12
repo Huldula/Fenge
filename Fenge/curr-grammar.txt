@@ -1,0 +1,12 @@
+math-add:			math-mul ((PLUS|MINUS) math-mul)*
+
+math-mul:			unary ((MUL|DIV|MOD) unary)*
+
+unary:				(PLUS|MINUS) unary
+					NOT unary
+					simple
+
+
+simple:				LPAREN math-add RPAREN
+					INT
+					FLOAT
