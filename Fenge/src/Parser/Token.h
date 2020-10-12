@@ -24,7 +24,7 @@ private:
 	const void* value_;
 };
 
-#define TOKEN_STRING_LIST(T) \
+#define TOKEN_STRING_LIST \
 	T(ILLEGAL, "") \
 	T(IDENTIFIER, "") \
 	T(KEYWORD, "") \
@@ -38,28 +38,20 @@ private:
 	T(RPAREN, ")") \
 	T(EOS, "\0")
 
-#define KEYWORD_STRING_LIST(T) \
+#define KEYWORD_STRING_LIST \
 	T(NO_KEYWORD, "") \
 	T(VAR, "var")
 
 
-#define T(name, str) Z(name)
-	#define TOKEN_LIST(Z) TOKEN_STRING_LIST(T)
-#undef T
-
-#define T(name, str) Z(name)
-	#define KEYWORD_LIST(Z) KEYWORD_STRING_LIST(T)
-#undef T
-
 enum class Token::Type {
-#define T(name) name,
-	TOKEN_LIST(T)
+#define T(name, str) name,
+	TOKEN_STRING_LIST
 #undef T
 };
 
 enum class Token::Keyword {
-#define T(name) name,
-	KEYWORD_LIST(T)
+#define T(name, str) name,
+	KEYWORD_STRING_LIST
 #undef T
 };
 
