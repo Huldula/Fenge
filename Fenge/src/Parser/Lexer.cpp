@@ -57,6 +57,8 @@ LexerResult* Lexer::generateTokens() {
 			return result;
 		}
 	}
+
+	result->tokens.push_back(new Token(Token::Type::EOS, nullptr));
 	return result;
 }
 
@@ -108,7 +110,7 @@ LexerResult::~LexerResult() {
 
 std::string LexerResult::toString() const {
 	std::string out;
-	if (error.code != ErrorCode::NO_ERROR) {
+	if (error.isError()) {
 		out = ErrorMessageGenerator::fromError(error);
 	} else {
 		for (const Token* t : tokens) {

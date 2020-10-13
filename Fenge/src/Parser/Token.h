@@ -11,12 +11,16 @@ public:
 	Token(Type type, void* value);
 	~Token();
 
-	const bool hasValue() const;
+	const inline bool hasValue() const;
 	const size_t valueSize() const;
 
 	static Keyword keywordType(const std::string_view in);
 
-	const Type type() const;
+	static bool isLiteralType(Type type);
+	static bool isAddType(Type type);
+	static bool isMulType(Type type);
+
+	const inline Type type() const;
 
 	[[nodiscard]] std::string toString() const;
 private:
@@ -34,6 +38,7 @@ private:
 	T(MINUS, "-") \
 	T(MUL, "*") \
 	T(DIV, "/") \
+	T(MOD, "%") \
 	T(LPAREN, "(") \
 	T(RPAREN, ")") \
 	T(EOS, "\0")

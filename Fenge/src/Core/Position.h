@@ -13,6 +13,7 @@ private:
 	int col_;
 public:
 	Position() : index_(-1), line_(0), col_(-1) { };
+	Position(int index) : index_(index), line_(0), col_(-1) { };
 	Position(const int index, const int line, const int col) : index_(index), line_(line), col_(col) { };
 
 	void advance() {
