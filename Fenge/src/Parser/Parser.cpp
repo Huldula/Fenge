@@ -36,7 +36,7 @@ ParserResult Parser::parseAddExpr() {
 			return ParserResult{ right.error, nullptr };
 		left.node = (Node*)new BinaryNode(left.node, op, right.node);
 	}
-	return ParserResult{ ErrorCode::NO_ERROR, left.node };
+	return ParserResult{ Error(ErrorCode::NO_ERROR, pos_), left.node };
 }
 
 ParserResult Parser::parseMulExpr() {
@@ -52,7 +52,7 @@ ParserResult Parser::parseMulExpr() {
 			return ParserResult{ right.error, nullptr };
 		left.node = (Node*)new BinaryNode(left.node, op, right.node);
 	}
-	return ParserResult{ ErrorCode::NO_ERROR, left.node };
+	return ParserResult{ Error(ErrorCode::NO_ERROR, pos_), left.node };
 }
 
 ParserResult Parser::parseUnary() {
@@ -62,7 +62,7 @@ ParserResult Parser::parseUnary() {
 		ParserResult inner = parseUnary();
 		if (inner.error.isError())
 			return ParserResult{ inner.error, nullptr };
-		return ParserResult{ ErrorCode::NO_ERROR, (Node*)new UnaryNode(op, inner.node) };
+		return ParserResult{ Error(ErrorCode::NO_ERROR, pos_), (Node*)new UnaryNode(op, inner.node) };
 	} else {
 		return parseSimple();
 	}
@@ -76,8 +76,10 @@ ParserResult Parser::parseSimple() {
 	} else if (currentToken_->type() == Token::Type::LPAREN) {
 		advance();
 		ParserResult inner = parseAddExpr();
-		if (inner.error.isError() || currentToken_->type() != Token::Type::RPAREN)
+		if (inner.error.isError())
 			return ParserResult{ inner.error, nullptr };
+		if (currentToken_->type() != Token::Type::RPAREN)
+			return ParserResult{ Error(ErrorCode::RPAREN_EXPECTED, pos_), nullptr };
 		result.node = inner.node;
 		advance();
 	} else {

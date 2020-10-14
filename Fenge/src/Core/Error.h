@@ -9,13 +9,14 @@ namespace fenge {
 enum class ErrorCode {
 	NO_ERROR,
 	ILLEGAL_CHAR,
-	ILLEGAL_TOKEN
+	ILLEGAL_TOKEN,
+	RPAREN_EXPECTED
 };
 
 struct Error {
 public:
 	Error(ErrorCode code, Position pos) : code(code), pos(pos) {}
-	Error(ErrorCode code) : code(code) {}
+	explicit Error(ErrorCode code) : code(code) {}
 	ErrorCode code;
 	Position pos;
 
@@ -34,6 +35,8 @@ public:
 			return std::string("Illegal character at index ") + std::to_string(error.pos.index());
 		case ErrorCode::ILLEGAL_TOKEN:
 			return std::string("Illegal token at index ") + std::to_string(error.pos.index());
+		case ErrorCode::RPAREN_EXPECTED:
+			return std::string("Expected ')' at index ") + std::to_string(error.pos.index());
 		default:
 			return std::string();
 		}
