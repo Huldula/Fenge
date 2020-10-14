@@ -19,13 +19,13 @@ class Parser
 public:
 	explicit Parser(const std::vector<Token*>& input);
 
-	ParserResult* parse();
-	ParserResult* parseLiteral();
-	ParserResult* parseUnary();
+	ParserResult parse();
+	ParserResult parseAddExpr();
+	ParserResult parseMulExpr();
+	ParserResult parseUnary();
+	ParserResult parseSimple();
 	//ParserResult* parseBinary(ParserResult* (Parser::* func)());
 
-	ParserResult* parseAddExpr();
-	ParserResult* parseMulExpr();
 	//ParserResult* parseUnaryExpr();
 private:
 	int pos_;

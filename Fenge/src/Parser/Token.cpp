@@ -51,19 +51,19 @@ Token::Keyword Token::keywordType(const std::string_view in) {
 		return Keyword::NO_KEYWORD;
 }
 
-inline bool Token::isLiteralType(Type type) {
+bool Token::isLiteralType(Type type) {
 	return type == Type::INT || type == Type::FLOAT || type == Type::IDENTIFIER;
 }
 
-inline bool Token::isAddType(Type type) {
+bool Token::isAddType(Type type) {
 	return type == Type::PLUS || type == Type::MINUS;
 }
 
-inline bool Token::isMulType(Type type) {
+bool Token::isMulType(Type type) {
 	return type == Type::MUL || type == Type::DIV || type == Type::MOD;
 }
 
-const inline Token::Type Token::type() const {
+const Token::Type Token::type() const {
 	return type_;
 }
 

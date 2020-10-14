@@ -33,7 +33,7 @@ public:
 		case ErrorCode::ILLEGAL_CHAR:
 			return std::string("Illegal character at index ") + std::to_string(error.pos.index());
 		case ErrorCode::ILLEGAL_TOKEN:
-			return std::string("Illegal tokaen at index ") + std::to_string(error.pos.index());
+			return std::string("Illegal token at index ") + std::to_string(error.pos.index());
 		default:
 			return std::string();
 		}

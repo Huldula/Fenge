@@ -22,14 +22,14 @@ class Lexer
 public:
 	explicit Lexer(const std::string& input);
 	~Lexer();
-	LexerResult* generateTokens();
+	LexerResult generateTokens();
 private:
 	Position pos_;
 	void advance();
 	char currentChar_;
 	const std::string& input_;
 
-	inline void pushBackAdvance(LexerResult* result, Token* t);
+	inline void pushBackAdvance(LexerResult& result, Token* t);
 	inline int currentPos() const;
 	Token* makeNumber();
 	Token* makeIdentifier();

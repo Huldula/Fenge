@@ -20,7 +20,7 @@ public:
 	static bool isAddType(Type type);
 	static bool isMulType(Type type);
 
-	const inline Type type() const;
+	const Type type() const; 
 
 	[[nodiscard]] std::string toString() const;
 private:

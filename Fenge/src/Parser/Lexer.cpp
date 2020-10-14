@@ -16,8 +16,8 @@ void Lexer::advance() {
 	currentChar_ = input_[currentPos()];
 }
 
-inline void Lexer::pushBackAdvance(LexerResult* result, Token* t) {
-	result->tokens.push_back(t);
+inline void Lexer::pushBackAdvance(LexerResult& result, Token* t) {
+	result.tokens.push_back(t);
 	advance();
 }
 
@@ -25,15 +25,15 @@ inline int Lexer::currentPos() const {
 	return pos_.index();
 }
 
-LexerResult* Lexer::generateTokens() {
-	LexerResult* result = new LexerResult();
+LexerResult Lexer::generateTokens() {
+	LexerResult result = LexerResult();
 	while (currentChar_ != '\0') {
 		if (IS_WHITESPACE_CHAR(currentChar_)) {
 			advance();
 		} else if (IS_LETTER_CHAR(currentChar_)) {
-			result->tokens.push_back(makeIdentifier());
+			result.tokens.push_back(makeIdentifier());
 		} else if (IS_DECIMAL_DOT_CHAR(currentChar_)) {
-			result->tokens.push_back(makeNumber());
+			result.tokens.push_back(makeNumber());
 		} else if (currentChar_ == '+') {
 			pushBackAdvance(result, new Token(Token::Type::PLUS, nullptr));
 		} else if (currentChar_ == '-') {
@@ -47,18 +47,18 @@ LexerResult* Lexer::generateTokens() {
 		} else if (currentChar_ == ')') {
 			pushBackAdvance(result, new Token(Token::Type::RPAREN, nullptr));
 		} else {
-			result->error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
+			result.error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;
 		}
 
-		if (result->tokens.size() > 0 &&
-			result->tokens[result->tokens.size() - 1]->type() == Token::Type::ILLEGAL) {
-			result->error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
+		if (result.tokens.size() > 0 &&
+			result.tokens[result.tokens.size() - 1]->type() == Token::Type::ILLEGAL) {
+			result.error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;
 		}
 	}
 
-	result->tokens.push_back(new Token(Token::Type::EOS, nullptr));
+	result.tokens.push_back(new Token(Token::Type::EOS, nullptr));
 	return result;
 }
 
@@ -104,8 +104,8 @@ Token* Lexer::makeIdentifier() {
 
 LexerResult::LexerResult() = default;
 LexerResult::~LexerResult() {
-	for (const Token* t : tokens)
-		delete t;
+	//for (const Token* t : tokens)
+		//delete t;
 }
 
 std::string LexerResult::toString() const {
