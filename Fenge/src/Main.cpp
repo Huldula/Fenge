@@ -3,6 +3,7 @@
 #include "Core/Log.h"
 #include "Parser/Lexer.h"
 #include "Parser/Parser.h"
+#include "Compiler/Compiler.h"
 
 using namespace fenge;
 
