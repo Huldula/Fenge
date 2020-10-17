@@ -6,27 +6,28 @@ namespace fenge {
 
 class Instruction {
 public:
-	enum Opcode;
-	enum Function;
+	enum class Opcode {
+#define T(name, val) name = (char)val,
+		OPCODE_LIST
+#undef T
+	};
+	enum class Function {
+#define T(name, val) name = (char)val,
+		FUNCTION_LIST
+#undef T
+	};
 
-	[[nodiscard]] std::string toString() const {
-		return "";
-	}
+	Instruction(int value);
+	Instruction(char opcode, char agr1, char agr2, char agr3, char agr4, char agr5);
+
+	void setOpcode(Opcode opcode);
+	void setRW(char reg);
+
+	int value() const;
+
+	[[nodiscard]] std::string toString() const;
 private:
-	const Opcode opcode_;
-	const Function func_;
-};
-
-enum Instruction::Opcode {
-#define T(name, val) name = val,
-	OPCODE_LIST
-#undef T
-};
-
-enum Instruction::Function {
-#define T(name, val) name = val,
-	FUNCTION_LIST
-#undef T
+	int value_;
 };
 
 }
