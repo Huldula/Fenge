@@ -18,10 +18,12 @@ public:
 	};
 
 	Instruction(int value);
-	Instruction(char opcode, char agr1, char agr2, char agr3, char agr4, char agr5);
 
-	void setOpcode(Opcode opcode);
-	void setRW(char reg);
+	Opcode getOpcode() const;
+	Function getFunction() const;
+	Function getFunctionSafe() const;
+
+	bool hasFunction() const;
 
 	int value() const;
 

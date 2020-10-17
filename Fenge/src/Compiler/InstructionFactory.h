@@ -15,7 +15,7 @@ public:
 		return Instruction(
 			(int)Instruction::Opcode::REG
 			+ (rw << 4)
-			+ ((unsigned char)func % 16 << 8)
+			+ (((unsigned char)func & 0xF) << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
 			+ (((unsigned char)func >> 4) << 20)
@@ -41,11 +41,11 @@ public:
 	static Instruction JMPC(Instruction::Function func, unsigned char rr1, unsigned char rr2, unsigned char im) {
 		return Instruction(
 			(int)Instruction::Opcode::JMPC
-			+ (im % 16 << 4)
+			+ ((im & 0xF) << 4)
 			+ ((unsigned char)func << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ (((unsigned char)func >> 4) << 20)
+			+ (((unsigned char)im >> 4) << 20)
 		);
 	}
 
@@ -55,18 +55,18 @@ public:
 			+ (rw << 4)
 			+ ((im >> 8) << 8)
 			+ (rr1 << 12)
-			+ (im % 256 << 16)
+			+ ((im & 0xFF) << 16)
 		);
 	}
 
 	static Instruction ST(unsigned char rr1, unsigned char rr2, unsigned short im) {
 		return Instruction(
 			(int)Instruction::Opcode::ST
-			+ (im % 16 << 4)
+			+ ((im & 0xF) << 4)
 			+ ((im >> 8) << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ ((im % 256 >> 4) << 20)
+			+ ((im & 0xF0) << 16) // only 16, because it has 4 0s at the end
 		);
 	}
 
@@ -94,7 +94,7 @@ private:
 			(int)op
 			+ (rw << 4)
 			+ ((im >> 8) << 8)
-			+ (im % 256 << 16)
+			+ ((im & 0xFF) << 16)
 		);
 	}
 };

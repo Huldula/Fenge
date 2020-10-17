@@ -23,7 +23,13 @@ std::string getComilerOutput(const std::string& input) {
 	return "";
 }
 
-#define ASSERT(instruction, val) if (instruction.value() != val) { LOG(std::hex << instruction.value()) } else { LOG("subba") } 
+#define ASSERT(instruction, val) \
+if (instruction.value() != val) { \
+	LOG(std::hex << instruction.value()) \
+} else { \
+	LOG("subba") \
+} \
+LOG(std::hex << (int)instruction.getFunctionSafe()) 
 
 void testInstructionFactory() {
 	ASSERT(InstructionFactory::NOP(), 0x000000);
