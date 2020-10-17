@@ -15,10 +15,10 @@ public:
 		return Instruction(
 			(int)Instruction::Opcode::REG
 			+ (rw << 4)
-			+ ((char)func % 16 << 8)
+			+ ((unsigned char)func % 16 << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ (((char)func >> 4) << 20)
+			+ (((unsigned char)func >> 4) << 20)
 		);
 	}
 
@@ -42,10 +42,10 @@ public:
 		return Instruction(
 			(int)Instruction::Opcode::JMPC
 			+ (im % 16 << 4)
-			+ ((char)func << 8)
+			+ ((unsigned char)func << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ (((char)func >> 4) << 20)
+			+ (((unsigned char)func >> 4) << 20)
 		);
 	}
 
@@ -83,9 +83,9 @@ private:
 		return Instruction(
 			(int)op
 			+ (rw << 4)
-			+ ((char)func << 8)
+			+ ((unsigned char)func << 8)
 			+ (rr1 << 12)
-			+ ((int)im << 16)
+			+ ((unsigned int)im << 16)
 		);
 	}
 
