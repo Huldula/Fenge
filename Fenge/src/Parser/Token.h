@@ -21,6 +21,7 @@ public:
 	static bool isMulType(Type type);
 
 	const Type type() const; 
+	const void* value() const; 
 
 	[[nodiscard]] std::string toString() const;
 private:

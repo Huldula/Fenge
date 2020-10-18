@@ -46,6 +46,8 @@
 //	T(ROTR,	0x07) \
 
 
+
+// 0xF functions do not exist - just for development
 #define FUNCTION_LIST \
 	T(ILL,	0x00) \
 	T(EQ,	0x01) \
@@ -72,3 +74,7 @@
 	T(SHR,	0x50) \
 	T(ROTL,	0x60) \
 	T(ROTR,	0x70) \
+	\
+	T(MUL, 0x21) \
+	T(DIV, 0xF2) \
+	T(MOD, 0xF3) \

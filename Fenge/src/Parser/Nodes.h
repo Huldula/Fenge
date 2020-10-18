@@ -9,9 +9,20 @@ namespace fenge {
 
 class Node {
 public:
+	enum class Type {
+		NODE,
+		LITERAL,
+		UNARY,
+		BINARY
+	};
+
 	virtual ~Node() {}
 	inline virtual std::string toString() const {
 		return "()";
+	}
+
+	virtual Type type() const {
+		return Type::NODE;
 	}
 };
 
@@ -28,6 +39,10 @@ public:
 
 	inline std::string toString() const override {
 		return token->toString();
+	}
+
+	Type type() const override {
+		return Type::LITERAL;
 	}
 };
 
@@ -46,6 +61,10 @@ public:
 
 	inline std::string toString() const override {
 		return std::string("(") + op->toString() + node->toString() + ")";
+	}
+
+	Type type() const override {
+		return Type::UNARY;
 	}
 };
 
@@ -66,6 +85,10 @@ public:
 
 	inline std::string toString() const override {
 		return std::string("(") + left->toString() + op->toString() + right->toString() + ")";
+	}
+
+	Type type() const override {
+		return Type::BINARY;
 	}
 };
 

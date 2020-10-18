@@ -36,7 +36,7 @@ ParserResult Parser::parseAddExpr() {
 			return ParserResult{ right.error, nullptr };
 		left.node = (Node*)new BinaryNode(left.node, op, right.node);
 	}
-	return ParserResult{ Error(ErrorCode::NO_ERROR, pos_), left.node };
+	return ParserResult{ Error(), left.node };
 }
 
 ParserResult Parser::parseMulExpr() {
@@ -52,7 +52,7 @@ ParserResult Parser::parseMulExpr() {
 			return ParserResult{ right.error, nullptr };
 		left.node = (Node*)new BinaryNode(left.node, op, right.node);
 	}
-	return ParserResult{ Error(ErrorCode::NO_ERROR, pos_), left.node };
+	return ParserResult{ Error(), left.node };
 }
 
 ParserResult Parser::parseUnary() {
@@ -62,7 +62,7 @@ ParserResult Parser::parseUnary() {
 		ParserResult inner = parseUnary();
 		if (inner.error.isError())
 			return ParserResult{ inner.error, nullptr };
-		return ParserResult{ Error(ErrorCode::NO_ERROR, pos_), (Node*)new UnaryNode(op, inner.node) };
+		return ParserResult{ Error(), (Node*)new UnaryNode(op, inner.node) };
 	} else {
 		return parseSimple();
 	}

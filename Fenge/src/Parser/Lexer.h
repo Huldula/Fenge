@@ -10,7 +10,7 @@ struct LexerResult {
 	LexerResult();
 	~LexerResult();
 
-	Error error{ErrorCode::NO_ERROR};
+	Error error;
 	std::vector<Token*> tokens;
 
 	[[nodiscard]] std::string toString() const;

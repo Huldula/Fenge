@@ -18,6 +18,13 @@ std::string getComilerOutput(const std::string& input) {
 	Parser parser = Parser(lexerResult.tokens);
 	ParserResult parserResult = parser.parse();
 	LOG(parserResult.toString());
+
+	Compiler compiler = Compiler();
+	CompilerResult compilerResult = compiler.compile(parserResult.node, 0x3);
+	for (auto instr : compilerResult.instructions) {
+		LOG(instr.toHexString());
+	}
+
 	delete parserResult.node;
 	delete lexerResult.tokens.back();
 	return "";
@@ -29,7 +36,7 @@ if (instruction.value() != val) { \
 } else { \
 	LOG("subba") \
 } \
-LOG(std::hex << (int)instruction.getFunctionSafe()) 
+//LOG(std::hex << (int)instruction.getFunctionSafe()) 
 
 void testInstructionFactory() {
 	ASSERT(InstructionFactory::NOP(), 0x000000);
@@ -46,7 +53,7 @@ void testInstructionFactory() {
 }
 
 int main() {
-	testInstructionFactory();
+	//testInstructionFactory();
 	std::string input;
 	while (true) {
 		std::cout << "> " << std::flush;

@@ -11,45 +11,45 @@ public:
 		return Instruction((int)Instruction::Opcode::NOP);
 	}
 
-	static Instruction REG(Instruction::Function func, unsigned char rw, unsigned char rr1, unsigned char rr2) {
+	static Instruction REG(const Instruction::Function func, BYTE rw, BYTE rr1, BYTE rr2) {
 		return Instruction(
 			(int)Instruction::Opcode::REG
 			+ (rw << 4)
-			+ (((unsigned char)func & 0xF) << 8)
+			+ (((BYTE)func & 0xF) << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ (((unsigned char)func >> 4) << 20)
+			+ (((BYTE)func >> 4) << 20)
 		);
 	}
 
-	static Instruction LWI(Instruction::Function func, unsigned char rw, unsigned char rr1, unsigned char im) {
+	static Instruction LWI(const Instruction::Function func, BYTE rw, BYTE rr1, BYTE im) {
 		return LWI_UPI(Instruction::Opcode::LWI, func, rw, rr1, im);
 	}
 
-	static Instruction UPI(Instruction::Function func, unsigned char rw, unsigned char rr1, unsigned char im) {
+	static Instruction UPI(const Instruction::Function func, BYTE rw, BYTE rr1, BYTE im) {
 		return LWI_UPI(Instruction::Opcode::UPI, func, rw, rr1, im);
 	}
 
-	static Instruction LI(unsigned char rw, unsigned short im) {
+	static Instruction LI(BYTE rw, SHORT im) {
 		return LI_JMP_CALL(Instruction::Opcode::LI, rw, im);
 	}
 
-	static Instruction JMP(unsigned char rw, unsigned short im) {
+	static Instruction JMP(BYTE rw, SHORT im) {
 		return LI_JMP_CALL(Instruction::Opcode::JMP, rw, im);
 	}
 
-	static Instruction JMPC(Instruction::Function func, unsigned char rr1, unsigned char rr2, unsigned char im) {
+	static Instruction JMPC(const Instruction::Function func, BYTE rr1, BYTE rr2, BYTE im) {
 		return Instruction(
 			(int)Instruction::Opcode::JMPC
 			+ ((im & 0xF) << 4)
-			+ ((unsigned char)func << 8)
+			+ ((BYTE)func << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ (((unsigned char)im >> 4) << 20)
+			+ (((BYTE)im >> 4) << 20)
 		);
 	}
 
-	static Instruction LD(unsigned char rw, unsigned char rr1, unsigned short im) {
+	static Instruction LD(BYTE rw, BYTE rr1, SHORT im) {
 		return Instruction(
 			(int)Instruction::Opcode::LD
 			+ (rw << 4)
@@ -59,7 +59,7 @@ public:
 		);
 	}
 
-	static Instruction ST(unsigned char rr1, unsigned char rr2, unsigned short im) {
+	static Instruction ST(BYTE rr1, BYTE rr2, SHORT im) {
 		return Instruction(
 			(int)Instruction::Opcode::ST
 			+ ((im & 0xF) << 4)
@@ -70,7 +70,7 @@ public:
 		);
 	}
 
-	static Instruction CALL(unsigned char rw, unsigned short im) {
+	static Instruction CALL(BYTE rw, SHORT im) {
 		return LI_JMP_CALL(Instruction::Opcode::CALL, rw, im);
 	}
 
@@ -79,17 +79,17 @@ public:
 	}
 
 private:
-	static Instruction LWI_UPI(Instruction::Opcode op, Instruction::Function func, unsigned char rw, unsigned char rr1, unsigned char im) {
+	static Instruction LWI_UPI(const Instruction::Opcode op, const Instruction::Function func, BYTE rw, BYTE rr1, BYTE im) {
 		return Instruction(
 			(int)op
 			+ (rw << 4)
-			+ ((unsigned char)func << 8)
+			+ ((BYTE)func << 8)
 			+ (rr1 << 12)
-			+ ((unsigned int)im << 16)
+			+ ((int)im << 16)
 		);
 	}
 
-	static Instruction LI_JMP_CALL(Instruction::Opcode op, unsigned char rw, unsigned short im) {
+	static Instruction LI_JMP_CALL(const Instruction::Opcode op, BYTE rw, SHORT im) {
 		return Instruction(
 			(int)op
 			+ (rw << 4)

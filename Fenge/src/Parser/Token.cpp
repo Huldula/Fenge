@@ -67,6 +67,10 @@ const Token::Type Token::type() const {
 	return type_;
 }
 
+const void* Token::value() const {
+	return value_;
+}
+
 [[nodiscard]] std::string Token::toString() const {
 	std::string out = "[";
 	switch (type_) {

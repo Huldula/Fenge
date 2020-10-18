@@ -27,6 +27,7 @@ public:
 
 	int value() const;
 
+	[[nodiscard]] std::string toHexString() const;
 	[[nodiscard]] std::string toString() const;
 private:
 	int value_;

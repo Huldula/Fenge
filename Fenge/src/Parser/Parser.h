@@ -8,7 +8,7 @@ namespace fenge {
 
 class ParserResult {
 public:
-	Error error{ ErrorCode::NO_ERROR };
+	Error error;
 	Node* node{ nullptr };
 
 	[[nodiscard]] std::string toString() const;

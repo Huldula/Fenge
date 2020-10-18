@@ -2,6 +2,9 @@
 
 #include "fgpch.h"
 
+#define BYTE const unsigned char
+#define SHORT const unsigned short
+
 #define WHITESPACE_CHAR_LIST(T) T(' ') \
 	T('\t') \
 	T('\r') \

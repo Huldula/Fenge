@@ -9,12 +9,16 @@ namespace fenge {
 enum class ErrorCode {
 	NO_ERROR,
 	ILLEGAL_CHAR,
+
 	ILLEGAL_TOKEN,
-	RPAREN_EXPECTED
+	RPAREN_EXPECTED,
+
+	COMPILE_ERROR
 };
 
 struct Error {
 public:
+	Error() : code(ErrorCode::NO_ERROR) {}
 	Error(ErrorCode code, Position pos) : code(code), pos(pos) {}
 	explicit Error(ErrorCode code) : code(code) {}
 	ErrorCode code;

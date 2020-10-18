@@ -14,7 +14,7 @@ Instruction::Opcode Instruction::getOpcode() const {
 // does not check if there is actually a function
 Instruction::Function Instruction::getFunction() const {
 	if (getOpcode() == Opcode::REG) {
-		return Function::ADD;
+		return (Function)(((value_ & 0xF00) >> 8) + ((value_ & 0xF00000) >> 16));
 	} else {
 		return (Function)(value_ & 0xF00 >> 8);
 	}
@@ -40,8 +40,17 @@ int Instruction::value() const {
 	return value_;
 }
 
-std::string Instruction::toString() const
-{
+std::string Instruction::toHexString() const {
+	std::stringstream stream;
+	stream << std::hex << value_;
+	std::string out = std::string(stream.str());
+	while (out.length() < 6) {
+		out = std::string("0") + out;
+	}
+	return out;
+}
+
+std::string Instruction::toString() const {
 	return "";
 }
 
