@@ -77,7 +77,7 @@ private:
 
 #define KEYWORD_STRING_LIST \
 	T(NO_KEYWORD, "") \
-	T(VAR, "var")
+	T(INT, "int")
 
 
 enum class Token::Type {

@@ -1,13 +1,16 @@
 statements:			statement*
 
-statement:			KEYWORD:RETURN expr?
+statement:			RETURN expr?
 
 
 
-
+expr:				assign*
 
 assign:				logic-or
 					left-side EQUALS assign
+
+left-side:			primary
+					INT IDENTIFIER
 
 logic-or:			logic-xor (LOG_OR logic-xor)*
 
