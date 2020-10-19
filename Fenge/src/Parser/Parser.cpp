@@ -61,15 +61,7 @@ ParserResult Parser::parseCompEq() {
 }
 
 ParserResult Parser::parseCompRela() {
-	return parseBinary(&Parser::parseMathAdd, Token::isCompRelaType);
-}
-
-ParserResult Parser::parseMathAdd() {
-	return parseBinary(&Parser::parseMathMul, Token::isAddType);
-}
-
-ParserResult Parser::parseMathMul() {
-	return parseBinary(&Parser::parseBitOr, Token::isMulType);
+	return parseBinary(&Parser::parseBitOr, Token::isCompRelaType);
 }
 
 ParserResult Parser::parseBitOr() {
@@ -77,11 +69,23 @@ ParserResult Parser::parseBitOr() {
 }
 
 ParserResult Parser::parseBitXor() {
-	return parseBinary(&Parser::parseBitAnd, Token::isBitOrType);
+	return parseBinary(&Parser::parseBitAnd, Token::isBitXorType);
 }
 
 ParserResult Parser::parseBitAnd() {
-	return parseBinary(&Parser::parseUnary, Token::isBitAndType);
+	return parseBinary(&Parser::parseBitShift, Token::isBitAndType);
+}
+
+ParserResult Parser::parseBitShift() {
+	return parseBinary(&Parser::parseMathAdd, Token::isBitShiftType);
+}
+
+ParserResult Parser::parseMathAdd() {
+	return parseBinary(&Parser::parseMathMul, Token::isAddType);
+}
+
+ParserResult Parser::parseMathMul() {
+	return parseBinary(&Parser::parseUnary, Token::isMulType);
 }
 
 ParserResult Parser::parseUnary() {

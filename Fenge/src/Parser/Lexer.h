@@ -35,8 +35,8 @@ private:
 	Token* makeIdentifier();
 	Token* makeEE_EQASSIGN();
 	Token* makeNOT_NE();
-	Token* makeLT_LTE();
-	Token* makeGT_GTE();
+	Token* makeLT_LTE_SHIFT();
+	Token* makeGT_GTE_SHIFT();
 	Token* makeOR();
 	Token* makeXOR();
 	Token* makeAND();

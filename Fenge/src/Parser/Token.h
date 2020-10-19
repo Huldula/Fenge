@@ -25,11 +25,12 @@ public:
 	static bool isLogAndType(Type type);
 	static bool isCompEqType(Type type);
 	static bool isCompRelaType(Type type);
-	static bool isAddType(Type type);
-	static bool isMulType(Type type);
 	static bool isBitOrType(Type type);
 	static bool isBitXorType(Type type);
 	static bool isBitAndType(Type type);
+	static bool isBitShiftType(Type type);
+	static bool isAddType(Type type);
+	static bool isMulType(Type type);
 
 	const Type type() const; 
 	const void* value() const; 
@@ -67,6 +68,10 @@ private:
 	T(BIT_XOR, "^") \
 	T(BIT_AND, "&") \
 	T(BIT_NOT, "~") \
+	T(SHL, "<<") \
+	T(SHR, ">>") \
+	T(ROTL, "<<<") \
+	T(ROTR, ">>>") \
 	T(EQ_ASSIGN, "=") \
 	T(EOS, "\0")
 

@@ -23,7 +23,9 @@ bit-or:				bit-xor (BIT_OR bit-xor)*
 
 bit-xor:			bit-and (BIT_XOR bit-and)*
 
-bit-and:			math-add (BIT_AND math-add)*
+bit-and:			bit-shift (BIT_AND bit-shift)*
+
+bit-shift:			math-add ((SHL|SHR|ROTL|ROTR) math-add)*
 
 math-add:			math-mul ((PLUS|MINUS) math-mul)*
 

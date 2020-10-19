@@ -51,9 +51,9 @@ LexerResult Lexer::generateTokens() {
 		} else if (currentChar_ == '!') {
 			result.tokens.push_back(makeNOT_NE());
 		} else if (currentChar_ == '<') {
-			result.tokens.push_back(makeLT_LTE());
+			result.tokens.push_back(makeLT_LTE_SHIFT());
 		} else if (currentChar_ == '>') {
-			result.tokens.push_back(makeGT_GTE());
+			result.tokens.push_back(makeGT_GTE_SHIFT());
 		} else if (currentChar_ == '|') {
 			result.tokens.push_back(makeOR());
 		} else if (currentChar_ == '^') {
@@ -135,21 +135,37 @@ Token* Lexer::makeNOT_NE() {
 	}
 }
 
-Token* Lexer::makeLT_LTE() {
+Token* Lexer::makeLT_LTE_SHIFT() {
 	advance();
 	if (currentChar_ == '=') {
 		advance();
 		return new Token(Token::Type::LTE, nullptr);
+	} else if (currentChar_ == '<') {
+		advance();
+		if (currentChar_ == '<') {
+			advance();
+			return new Token(Token::Type::ROTL, nullptr);
+		} else {
+			return new Token(Token::Type::SHL, nullptr);
+		}
 	} else {
 		return new Token(Token::Type::LT, nullptr);
 	}
 }
 
-Token* Lexer::makeGT_GTE() {
+Token* Lexer::makeGT_GTE_SHIFT() {
 	advance();
 	if (currentChar_ == '=') {
 		advance();
 		return new Token(Token::Type::GTE, nullptr);
+	} else if (currentChar_ == '>') {
+		advance();
+		if (currentChar_ == '>') {
+			advance();
+			return new Token(Token::Type::ROTR, nullptr);
+		} else {
+			return new Token(Token::Type::SHR, nullptr);
+		}
 	} else {
 		return new Token(Token::Type::GT, nullptr);
 	}

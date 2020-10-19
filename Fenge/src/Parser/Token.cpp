@@ -56,7 +56,7 @@ bool Token::isLiteralType(Type type) {
 }
 
 bool Token::isUnaryType(Type type) {
-	return type == Type::LOG_NOT || type == Type::BIT_NOT || isLogAndType(type);
+	return type == Type::LOG_NOT || type == Type::BIT_NOT || isAddType(type);
 }
 
 bool Token::isLogType(Type type) {
@@ -103,6 +103,10 @@ bool Token::isBitXorType(Type type) {
 
 bool Token::isBitAndType(Type type) {
 	return type == Type::BIT_AND;
+}
+
+bool Token::isBitShiftType(Type type) {
+	return type == Type::SHL || type == Type::SHR || type == Type::ROTL || type == Type::ROTR;
 }
 
 const Token::Type Token::type() const {

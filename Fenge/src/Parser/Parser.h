@@ -27,11 +27,12 @@ public:
 	ParserResult parseLogAnd();
 	ParserResult parseCompEq();
 	ParserResult parseCompRela();
-	ParserResult parseMathAdd();
-	ParserResult parseMathMul();
 	ParserResult parseBitOr();
 	ParserResult parseBitXor();
 	ParserResult parseBitAnd();
+	ParserResult parseBitShift();
+	ParserResult parseMathAdd();
+	ParserResult parseMathMul();
 	ParserResult parseUnary();
 	ParserResult parseSimple();
 	//ParserResult* parseBinary(ParserResult* (Parser::* func)());

@@ -43,11 +43,12 @@ private:
 	CompilerResult visitLogAnd(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitCompEq(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitCompRela(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitMathAdd(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitMathMul(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitBitOr(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitBitXor(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitBitAnd(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitBitShift(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitMathAdd(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitMathMul(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitUnaryExpr(const UnaryNode* node, BYTE targetReg);
 	CompilerResult visitIntLiteralExpr(const LiteralNode* node, BYTE targetReg);
 

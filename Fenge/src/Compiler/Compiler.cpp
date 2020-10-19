@@ -30,16 +30,18 @@ CompilerResult Compiler::compile(const Node* node, BYTE targetReg) {
 			return visitCompEq(binaryNode, targetReg);
 		} else if(Token::isCompRelaType(binaryNode->op->type())) {
 			return visitCompRela(binaryNode, targetReg);
-		} else if (Token::isAddType(binaryNode->op->type())) {
-			return visitMathAdd(binaryNode, targetReg);
-		} else if (Token::isMulType(binaryNode->op->type())) {
-			return visitMathMul(binaryNode, targetReg);
 		} else if (Token::isBitOrType(binaryNode->op->type())) {
 			return visitBitOr(binaryNode, targetReg);
 		} else if (Token::isBitXorType(binaryNode->op->type())) {
 			return visitBitXor(binaryNode, targetReg);
 		} else if (Token::isBitAndType(binaryNode->op->type())) {
 			return visitBitAnd(binaryNode, targetReg);
+		} else if (Token::isBitShiftType(binaryNode->op->type())) {
+			return visitBitShift(binaryNode, targetReg);
+		} else if (Token::isAddType(binaryNode->op->type())) {
+			return visitMathAdd(binaryNode, targetReg);
+		} else if (Token::isMulType(binaryNode->op->type())) {
+			return visitMathMul(binaryNode, targetReg);
 		} else {
 			return CompilerResult::generateError();
 		}
@@ -158,6 +160,43 @@ CompilerResult Compiler::visitCompRela(const BinaryNode* node, BYTE targetReg) {
 }
 
 
+CompilerResult Compiler::visitBitOr(const BinaryNode* node, BYTE targetReg) {
+	return visitBinaryExpr(node, targetReg, Instruction::Function::OR);
+}
+
+
+CompilerResult Compiler::visitBitXor(const BinaryNode* node, BYTE targetReg) {
+	return visitBinaryExpr(node, targetReg, Instruction::Function::XOR);
+}
+
+
+CompilerResult Compiler::visitBitAnd(const BinaryNode* node, BYTE targetReg) {
+	return visitBinaryExpr(node, targetReg, Instruction::Function::AND);
+}
+
+CompilerResult Compiler::visitBitShift(const BinaryNode* node, BYTE targetReg) {
+	Instruction::Function func;
+	switch (node->op->type())
+	{
+	case Token::Type::SHL:
+		func = Instruction::Function::SHL;
+		break;
+	case Token::Type::SHR:
+		func = Instruction::Function::SHR;
+		break;
+	case Token::Type::ROTL:
+		func = Instruction::Function::ROTL;
+		break;
+	case Token::Type::ROTR:
+		func = Instruction::Function::ROTR;
+		break;
+	default:
+		return CompilerResult::generateError();
+	}
+	return visitBinaryExpr(node, targetReg, func);
+}
+
+
 CompilerResult Compiler::visitMathAdd(const BinaryNode* node, BYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
@@ -192,21 +231,6 @@ CompilerResult Compiler::visitMathMul(const BinaryNode* node, BYTE targetReg) {
 		return CompilerResult::generateError();
 	}
 	return visitBinaryExpr(node, targetReg, func);
-}
-
-
-CompilerResult Compiler::visitBitOr(const BinaryNode* node, BYTE targetReg) {
-	return visitBinaryExpr(node, targetReg, Instruction::Function::OR);
-}
-
-
-CompilerResult Compiler::visitBitXor(const BinaryNode* node, BYTE targetReg) {
-	return visitBinaryExpr(node, targetReg, Instruction::Function::XOR);
-}
-
-
-CompilerResult Compiler::visitBitAnd(const BinaryNode* node, BYTE targetReg) {
-	return visitBinaryExpr(node, targetReg, Instruction::Function::AND);
 }
 
 
