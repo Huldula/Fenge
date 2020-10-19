@@ -20,10 +20,18 @@ CompilerResult Compiler::compile(const Node* node, BYTE targetReg) {
 	switch (node->type()) {
 	case Node::Type::BINARY:
 		#define binaryNode ((BinaryNode*)node)
-		if (Token::isAddType(binaryNode->op->type())) {
-			return visitAddExpr(binaryNode, targetReg);
+		if (Token::isOrType(binaryNode->op->type())) {
+			return visitLogicOr(binaryNode, targetReg);
+		} else if (Token::isAndType(binaryNode->op->type())) {
+			return visitLogicAnd(binaryNode, targetReg);
+		} else if (Token::isCompEqType(binaryNode->op->type())) {
+			return visitCompEq(binaryNode, targetReg);
+		} else if(Token::isCompRelaType(binaryNode->op->type())) {
+			return visitCompRela(binaryNode, targetReg);
+		} else if (Token::isAddType(binaryNode->op->type())) {
+			return visitMathAdd(binaryNode, targetReg);
 		} else if (Token::isMulType(binaryNode->op->type())) {
-			return visitMulExpr(binaryNode, targetReg);
+			return visitMathMul(binaryNode, targetReg);
 		} else {
 			return CompilerResult::generateError();
 		}
@@ -67,7 +75,57 @@ CompilerResult Compiler::visitBinaryExpr(const BinaryNode* node, BYTE targetReg,
 }
 
 
-CompilerResult Compiler::visitAddExpr(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitLogicOr(const BinaryNode* node, BYTE targetReg) {
+	return visitBinaryExpr(node, targetReg, Instruction::Function::OR);
+}
+
+
+CompilerResult Compiler::visitLogicAnd(const BinaryNode* node, BYTE targetReg) {
+	return visitBinaryExpr(node, targetReg, Instruction::Function::AND);
+}
+
+
+CompilerResult Compiler::visitCompEq(const BinaryNode* node, BYTE targetReg) {
+	Instruction::Function func;
+	switch (node->op->type())
+	{
+	case Token::Type::EE:
+		func = Instruction::Function::EQ;
+		break;
+	case Token::Type::NE:
+		func = Instruction::Function::NEQ;
+		break;
+	default:
+		return CompilerResult::generateError();
+	}
+	return visitBinaryExpr(node, targetReg, func);
+}
+
+
+CompilerResult Compiler::visitCompRela(const BinaryNode* node, BYTE targetReg) {
+	Instruction::Function func;
+	switch (node->op->type())
+	{
+	case Token::Type::LT:
+		func = Instruction::Function::LS;
+		break;
+	case Token::Type::LTE:
+		func = Instruction::Function::LSEQ;
+		break;
+	case Token::Type::GT:
+		func = Instruction::Function::GR;
+		break;
+	case Token::Type::GTE:
+		func = Instruction::Function::GREQ;
+		break;
+	default:
+		return CompilerResult::generateError();
+	}
+	return visitBinaryExpr(node, targetReg, func);
+}
+
+
+CompilerResult Compiler::visitMathAdd(const BinaryNode* node, BYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{
@@ -84,7 +142,7 @@ CompilerResult Compiler::visitAddExpr(const BinaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitMulExpr(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitMathMul(const BinaryNode* node, BYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{

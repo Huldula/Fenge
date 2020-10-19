@@ -33,8 +33,13 @@ public:
 private:
 
 	CompilerResult visitBinaryExpr(const BinaryNode* node, BYTE targetReg, const Instruction::Function func);
-	CompilerResult visitAddExpr(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitMulExpr(const BinaryNode* node, BYTE targetReg);
+
+	CompilerResult visitLogicAnd(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitLogicOr(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitCompEq(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitCompRela(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitMathAdd(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitMathMul(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitUnaryExpr(const UnaryNode* node, BYTE targetReg);
 	CompilerResult visitIntLiteralExpr(const LiteralNode* node, BYTE targetReg);
 

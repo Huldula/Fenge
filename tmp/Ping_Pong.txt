@@ -1,0 +1,143 @@
+'^\s*([0123456789ABCDEF]{2}) ([0123456789ABCDEF]{2}) ([0123456789ABCDEF]{2})\s*$\R?' => '\3 \2 \1 '
+
+0x0000:	uint PlayerPos
+0x0001:	uint BotPos
+0x0002:	uint BallPosX
+0x0003:	uint BallPosY
+0x0004:	int BallVelX
+0x0005:	int BallVelY
+0x0006:	uint ScorePlayer
+0x0007:	uint ScoreBot
+
+00 00 00 09 00 02 84 03 C0 08 00 08 94 03 C0 18 00 09 A4 00 06 28 00 0A 38 00 0A B4 00 01 48 00 0B B4 FF FF 58 00 0B B4 00 00 C4 00 10 D1 80 5B D1 D8 00 E1 90 5B F4 00 0F E1 E0 4F D1 D9 0E 46 A2 0B F4 00 01 F1 F0 4A D1 D9 0F 01 D1 1B F4 00 01 B1 B0 2F 26 B4 FC 0A 00 00
+
+Initialize:
+C0 03 84	LI #0x8 0x03C0
+08 00 08	ST #0x0+0x000 #0x8				PlayerPos = 0x03C0
+C0 03 94	LI #0x9 0x03C0
+09 00 18	ST #0x0+0x001 #0x9				BotPos = 0x03C0
+06 00 A4	LI #0xA 0x0006
+0A 00 28	ST #0x0+0x002 #0xA				BallPosX = 6
+0A 00 38	ST #0x0+0x003 #0xA				BallPosY = 6
+01 00 B4	LI #0xB 0x0001
+0B 00 48	ST #0x0+0x004 #0xB				BallVelX = 1
+FF FF B4	LI #0xB 0xFFFF
+0B 00 58	ST #0x0+0x005 #0xB				BallVelY = -1
+
+00 00 B4	LI #0xB 0x0000					uint yCor = 0
+10 00 C4	:do LI #0xC 0x0010				do {
+5B 80 D1	SHR #0xD #0x8 #0xB					uint line = PlayerPos >> yCor
+00 D8 D1	ODD #0xD #0xD						line = line % 2
+5B 90 E1	SHR	#0xE #0x9 #0xB					uint pixel = BotPos >> yCor
+0F 00 F4	LI	#0xF 0x000F					
+4F E0 E1	SHL	#0xE #0xE #0xF					pixel = pixel << 15
+0E D9 D1	OR #0xD #0xD #0xE					line = line | pixel
+0B A2 46	JMPC :endif #0xA NEQ #0xB			if (ballPosY == yCor) {
+01 00 F4	LI #0xF 0x0001
+4A F0 F1	SHL #0xF #0xF #0xA					
+0F D9 D1	OR #0xD #0xD #0xF						line = line | (0x1 << BallPosX)
+												}
+1B D1 01	:endif DSPL #0xD #0xB				DISPLAY(yCor, line)
+01 00 F4	LI #0xF 0x0001
+2F B0 B1	ADD #0xB #0xB #0xF					yCor++
+FC B4 26	JMPC :do (#0xB LS #0xC)			} while(yCor < 16)
+00 00 0A	RET								return
+
+
+MoveAndRenderBall:
+00 00 87	LD #0x0+0x000 #0x8
+03 00 B7	LD #0x0+0x003 #0xB
+5B 80 C1	SHR #0xC #0x8 #0xB
+00 C8 C1	ODD #0xC #0xC					uint line = (PlayerPos >> BallPosY) % 2
+01 00 97	LD #0x0+0x001 #0x9
+5B 90 D1	SHR	#0xD #0x9 #0xB
+0F 00 E4	LI #0xE 0x000F
+4E D0 D1	SHL	#0xD #0xD #0xE				uint pixel = (BotPos >> BallPosY) << 15
+0D C9 C1	OR #0xC #0xC #0xD				line = line | pixel
+1B C1 01	DSPL #0xC #0xB					DISPLAY(BallPosY, line)
+	
+02 00 A7	LD #0x0+0x002 #0xA
+04 00 F7	LD #0x0+0x004 #0xF
+2F A0 A1	ADD #0xA #0xA #0xF
+0A 00 28	ST #0x0+0x002 #0xA				BallPosX += BallVelX
+05 00 F7	LD #0x0+0x005 #0xF
+2F B0 B1	ADD #0xB #0xB #0xF
+0B 00 38	ST #0x0+0x003 #0xB				BallPosY += BallVelY
+	
+5B 80 C1	SHR #0xC #0x8 #0xB
+00 C8 C1	ODD #0xC #0xC					line = (PlayerPos >> BallPosY) % 2
+5B 90 D1	SHR	#0xD #0x9 #0xB
+4E D0 D1	SHL	#0xD #0xD #0xE				pixel = (BotPos >> BallPosY) << 15
+0D C9 C1	OR #0xC #0xC #0xD				line = line | pixel
+01 00 04	LI #0x0 0x0001
+4A 20 D1	SHL #0xD #0x2 #0xA				pixel = 0x01 << BallPosX
+0D C9 C1	OR #0xC #0xC #0xD				line = line | pixel
+1B C1 01	DSPL #0xC #0xB					DISPLAY(BallPosY, line)
+00 00 0A	RET								return
+
+
+Sleep(uint ticks):
+LI #0x0 0x0001
+JMPC :ret (#0x3 LSEQ #0x0)					while (ticks > 0) {
+:loop SUB #0x3 #0x3 #0x2						ticks--
+JMPC :loop (#0x3 GR #0x0)					} 
+:ret RET									return
+
+
+CheckCollision:
+02 00 A7	LD #0x0+0x002 #0xA
+03 00 B7	LD #0x0+0x003 #0xB
+00 A2 C6	JMPC :if_1 (#0xA NEQ #0x0)		if (ballPosX == 0) {
+00 00 87	LD #0x0+0x000 #0x8
+5B 80 F1	SHR #0xF #0x8 #0xB
+00 F7 76	JMPC :if_1_1 (#0xF EVEN) 			if (PlayerPos >> BallPosY) {
+04 00 F7	LD #0x0+0x004 #0xF
+00 FB F1	NOT #0xF #0xF
+01 00 04	LI #0x0 0x0001
+22 F0 F1	ADD #0xF #0xF #0x2
+0F 00 48	ST #0x0+0x004 #0xF						BallVelX = ~BallVelX + 1
+10 01 06	JMPC :if_2 (#0x0 EQ #0x0)			} else {
+00 00 00	:if_1_1	CALL BotWin						BotWin() // NOT IMPLEMENTED
+00 00 0A	RET										return
+												}
+											}
+0F 00 04	:if_1 LI #0x0 0x000F
+02 A4 C6	JMPC :if_2 (#0xA LS #0x2)		else if (ballPosX >= 15) {
+01 00 97	LD #0x0+0x001 #0x9
+5B 90 F1	SHR #0xF #0x9 #0xB
+00 F7 76	JMPC :if_2_1 (#0xF EVEN)			if (BotPos >> BallPosY) {
+04 00 F7	LD #0x0+0x004 #0xF
+00 FB F1	NOT #0xF #0xF
+01 00 04	LI #0x0 0x0001
+22 F0 F1	ADD #0xF #0xF #0x2
+0F 00 48	ST #0x0+0x004 #0xF						BallVelX = ~BallVelX + 1
+00 01 36	JMPC :if_2 (#0x0 EQ #0x0)			} else {
+00 00 00	:if_2_1 CALL PlayerWin					PlayerWin() // NOT IMPLEMENTED
+00 00 0A	RET										return
+												}
+											}
+00 B1 36	:if_2 JMPC :if_2_1 (#0xB EQ #0x0)
+0F 00 04	LI #0x0 0x000F
+02 B4 66	JMPC :endif_2 (#0xB LS #0x2)	if (ballPosY == 0 || ballPosY >= 15) {
+05 00 F7	:if_2_1 LD #0x0+0x005 #0xF
+00 FB F1	NOT #0xF #0xF
+01 00 04	LI #0x0 0x0001
+22 F0 F1	ADD #0xF #0xF #0x2
+0F 00 58	ST #0x0+0x005 #0xF					BallVelY = ~BallVelY + 1
+											}
+00 00 0A	:endif_2 RET					return
+
+PlayerWin:
+	ScorePlayer++
+	Initialize()
+	
+BotWin:
+	ScoreBot++
+	Initialize()
+	
+
+05 00 09	CALL Initialize						Initialize()
+												while(true) {
+21 00 09	:while CALL MoveAndRenderBall			MoveAndRenderBall()
+3C 00 09	CALL CheckCollision						CheckCollision()
+02 00 05	JMP :while							}
