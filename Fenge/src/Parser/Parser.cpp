@@ -20,18 +20,19 @@ Token* Parser::peek() {
 }
 
 ParserResult Parser::parse() {
-	return parseAddExpr();
+	return parseLogicOr();
 }
 
-ParserResult Parser::parseAddExpr() {
-	ParserResult left = parseMulExpr();
+
+ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(Token::Type)) {
+	ParserResult left = (this->*toCall)();
 	if (left.error.isError())
 		return ParserResult{ left.error, nullptr };
 	ParserResult right;
-	while (Token::isAddType(currentToken_->type())) {
+	while (isType(currentToken_->type())) {
 		Token* op = currentToken_;
 		advance();
-		right = parseMulExpr();
+		right = (this->*toCall)();
 		if (right.error.isError())
 			return ParserResult{ right.error, nullptr };
 		left.node = (Node*)new BinaryNode(left.node, op, right.node);
@@ -39,20 +40,32 @@ ParserResult Parser::parseAddExpr() {
 	return ParserResult{ Error(), left.node };
 }
 
-ParserResult Parser::parseMulExpr() {
-	ParserResult left = parseUnary();
-	if (left.error.isError())
-		return ParserResult{ left.error, nullptr };
-	ParserResult right;
-	while (Token::isMulType(currentToken_->type())) {
-		Token* op = currentToken_;
-		advance();
-		right = parseUnary();
-		if (right.error.isError())
-			return ParserResult{ right.error, nullptr };
-		left.node = (Node*)new BinaryNode(left.node, op, right.node);
-	}
-	return ParserResult{ Error(), left.node };
+
+
+
+
+ParserResult Parser::parseLogicOr() {
+	return parseBinary(&Parser::parseLogicAnd, Token::isOrType);
+}
+
+ParserResult Parser::parseLogicAnd() {
+	return parseBinary(&Parser::parseCompEq, Token::isAndType);
+}
+
+ParserResult Parser::parseCompEq() {
+	return parseBinary(&Parser::parseCompRela, Token::isCompEqType);
+}
+
+ParserResult Parser::parseCompRela() {
+	return parseBinary(&Parser::parseMathAdd, Token::isCompRelaType);
+}
+
+ParserResult Parser::parseMathAdd() {
+	return parseBinary(&Parser::parseMathMul, Token::isAddType);
+}
+
+ParserResult Parser::parseMathMul() {
+	return parseBinary(&Parser::parseUnary, Token::isMulType);
 }
 
 ParserResult Parser::parseUnary() {
@@ -75,7 +88,7 @@ ParserResult Parser::parseSimple() {
 		advance();
 	} else if (currentToken_->type() == Token::Type::LPAREN) {
 		advance();
-		ParserResult inner = parseAddExpr();
+		ParserResult inner = parseMathAdd();
 		if (inner.error.isError())
 			return ParserResult{ inner.error, nullptr };
 		if (currentToken_->type() != Token::Type::RPAREN)
@@ -88,6 +101,7 @@ ParserResult Parser::parseSimple() {
 	return result;
 
 }
+
 
 
 

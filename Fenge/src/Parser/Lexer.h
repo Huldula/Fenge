@@ -33,6 +33,10 @@ private:
 	inline int currentPos() const;
 	Token* makeNumber();
 	Token* makeIdentifier();
+	Token* makeEE_EQASSIGN();
+	Token* makeNOT_NE();
+	Token* makeLT_LTE();
+	Token* makeGT_GTE();
 };
 
 

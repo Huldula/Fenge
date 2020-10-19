@@ -19,6 +19,10 @@ public:
 	static bool isLiteralType(Type type);
 	static bool isAddType(Type type);
 	static bool isMulType(Type type);
+	static bool isOrType(Type type);
+	static bool isAndType(Type type);
+	static bool isCompEqType(Type type);
+	static bool isCompRelaType(Type type);
 
 	const Type type() const; 
 	const void* value() const; 
@@ -42,6 +46,16 @@ private:
 	T(MOD, "%") \
 	T(LPAREN, "(") \
 	T(RPAREN, ")") \
+	T(EE, "==") \
+	T(NE, "!=") \
+	T(LT, "<") \
+	T(LTE, "<=") \
+	T(GT, ">") \
+	T(GTE, ">=") \
+	T(AND, "&") \
+	T(OR, "|") \
+	T(NOT, "!") \
+	T(EQ_ASSIGN, "=") \
 	T(EOS, "\0")
 
 #define KEYWORD_STRING_LIST \

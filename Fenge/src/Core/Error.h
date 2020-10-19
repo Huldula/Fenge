@@ -41,6 +41,8 @@ public:
 			return std::string("Illegal token at index ") + std::to_string(error.pos.index());
 		case ErrorCode::RPAREN_EXPECTED:
 			return std::string("Expected ')' at index ") + std::to_string(error.pos.index());
+		case ErrorCode::COMPILE_ERROR:
+			return std::string("Compile Error");
 		default:
 			return std::string();
 		}

@@ -55,6 +55,22 @@ bool Token::isLiteralType(Type type) {
 	return type == Type::INT || type == Type::FLOAT || type == Type::IDENTIFIER;
 }
 
+bool Token::isOrType(Type type) {
+	return type == Type::OR;
+}
+
+bool Token::isAndType(Type type) {
+	return type == Type::AND;
+}
+
+bool Token::isCompEqType(Type type) {
+	return type == Type::EE || type == Type::NE;
+}
+
+bool Token::isCompRelaType(Type type) {
+	return type == Type::LT || type == Type::LTE || type == Type::GT || type == Type::GTE;
+}
+
 bool Token::isAddType(Type type) {
 	return type == Type::PLUS || type == Type::MINUS;
 }

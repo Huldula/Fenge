@@ -20,8 +20,14 @@ public:
 	explicit Parser(const std::vector<Token*>& input);
 
 	ParserResult parse();
-	ParserResult parseAddExpr();
-	ParserResult parseMulExpr();
+	ParserResult parseBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type));
+
+	ParserResult parseLogicOr();
+	ParserResult parseLogicAnd();
+	ParserResult parseCompEq();
+	ParserResult parseCompRela();
+	ParserResult parseMathAdd();
+	ParserResult parseMathMul();
 	ParserResult parseUnary();
 	ParserResult parseSimple();
 	//ParserResult* parseBinary(ParserResult* (Parser::* func)());

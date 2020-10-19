@@ -1,3 +1,13 @@
+
+
+logic-or:			logic-and ((KEYWORD:OR) logic-and)*
+
+logic-and:			comp-eq ((KEYWORD:AND) comp-eq)*
+
+comp-eq:			comp-rela ((EE|NE) comp-rela)*
+
+comp-rela:			add ((LT|GT|LTE|GTE) add)*
+
 math-add:			math-mul ((PLUS|MINUS) math-mul)*
 
 math-mul:			unary ((MUL|DIV|MOD) unary)*
