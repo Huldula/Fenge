@@ -9,20 +9,29 @@ statement:			KEYWORD:RETURN expr?
 assign:				logic-or
 					left-side EQUALS assign
 
-logic-or:			logic-and ((KEYWORD:OR) logic-and)*
+logic-or:			logic-xor (LOG_OR logic-xor)*
 
-logic-and:			comp-eq ((KEYWORD:AND) comp-eq)*
+logic-xor:			logic-and (LOG_XOR logic-and)*
+
+logic-and:			comp-eq (LOG_AND comp-eq)*
 
 comp-eq:			comp-rela ((EE|NE) comp-rela)*
 
-comp-rela:			add ((LT|GT|LTE|GTE) add)*
+comp-rela:			bit-or ((LT|GT|LTE|GTE) bit-or)*
+
+bit-or:				bit-xor (BIT_OR bit-xor)*
+
+bit-xor:			bit-and (BIT_XOR bit-and)*
+
+bit-and:			math-add (BIT_AND math-add)*
 
 math-add:			math-mul ((PLUS|MINUS) math-mul)*
 
 math-mul:			unary ((MUL|DIV|MOD) unary)*
 
 unary:				(PLUS|MINUS) unary
-					NOT unary
+					LOG_NOT unary
+					BIT_NOT unary
 
 
 

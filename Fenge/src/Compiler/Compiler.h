@@ -32,16 +32,26 @@ public:
 	CompilerResult compile(const Node* node, BYTE targetReg);
 private:
 
+	CompilerResult visitBinaryExprConvert(const BinaryNode* node, BYTE targetReg,
+		const Instruction::Function func, CompilerResult (Compiler::* converter)(const Node*, BYTE));
 	CompilerResult visitBinaryExpr(const BinaryNode* node, BYTE targetReg, const Instruction::Function func);
+	CompilerResult visitLogExpr(const BinaryNode* node, BYTE targetReg, const Instruction::Function func);
+	CompilerResult compileBool(const Node* node, BYTE targetReg);
 
-	CompilerResult visitLogicAnd(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitLogicOr(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitLogOr(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitLogXor(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitLogAnd(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitCompEq(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitCompRela(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitMathAdd(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitMathMul(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitBitOr(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitBitXor(const BinaryNode* node, BYTE targetReg);
+	CompilerResult visitBitAnd(const BinaryNode* node, BYTE targetReg);
 	CompilerResult visitUnaryExpr(const UnaryNode* node, BYTE targetReg);
 	CompilerResult visitIntLiteralExpr(const LiteralNode* node, BYTE targetReg);
+
+	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, BYTE targetReg) const;
 
 	bool registers[16];
 	size_t nextFreeGPReg() const;

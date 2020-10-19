@@ -22,12 +22,16 @@ public:
 	ParserResult parse();
 	ParserResult parseBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type));
 
-	ParserResult parseLogicOr();
-	ParserResult parseLogicAnd();
+	ParserResult parseLogOr();
+	ParserResult parseLogXor();
+	ParserResult parseLogAnd();
 	ParserResult parseCompEq();
 	ParserResult parseCompRela();
 	ParserResult parseMathAdd();
 	ParserResult parseMathMul();
+	ParserResult parseBitOr();
+	ParserResult parseBitXor();
+	ParserResult parseBitAnd();
 	ParserResult parseUnary();
 	ParserResult parseSimple();
 	//ParserResult* parseBinary(ParserResult* (Parser::* func)());

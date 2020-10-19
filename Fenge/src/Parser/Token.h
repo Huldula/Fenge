@@ -17,12 +17,19 @@ public:
 	static Keyword keywordType(const std::string_view in);
 
 	static bool isLiteralType(Type type);
-	static bool isAddType(Type type);
-	static bool isMulType(Type type);
-	static bool isOrType(Type type);
-	static bool isAndType(Type type);
+	static bool isUnaryType(Type type);
+	static bool isLogType(Type type);
+
+	static bool isLogOrType(Type type);
+	static bool isLogXorType(Type type);
+	static bool isLogAndType(Type type);
 	static bool isCompEqType(Type type);
 	static bool isCompRelaType(Type type);
+	static bool isAddType(Type type);
+	static bool isMulType(Type type);
+	static bool isBitOrType(Type type);
+	static bool isBitXorType(Type type);
+	static bool isBitAndType(Type type);
 
 	const Type type() const; 
 	const void* value() const; 
@@ -52,9 +59,14 @@ private:
 	T(LTE, "<=") \
 	T(GT, ">") \
 	T(GTE, ">=") \
-	T(AND, "&") \
-	T(OR, "|") \
-	T(NOT, "!") \
+	T(LOG_OR, "||") \
+	T(LOG_XOR, "^^") \
+	T(LOG_AND, "&&") \
+	T(LOG_NOT, "!") \
+	T(BIT_OR, "|") \
+	T(BIT_XOR, "^") \
+	T(BIT_AND, "&") \
+	T(BIT_NOT, "~") \
 	T(EQ_ASSIGN, "=") \
 	T(EOS, "\0")
 

@@ -20,7 +20,7 @@ Token* Parser::peek() {
 }
 
 ParserResult Parser::parse() {
-	return parseLogicOr();
+	return parseLogOr();
 }
 
 
@@ -44,12 +44,16 @@ ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(T
 
 
 
-ParserResult Parser::parseLogicOr() {
-	return parseBinary(&Parser::parseLogicAnd, Token::isOrType);
+ParserResult Parser::parseLogOr() {
+	return parseBinary(&Parser::parseLogXor, Token::isLogOrType);
 }
 
-ParserResult Parser::parseLogicAnd() {
-	return parseBinary(&Parser::parseCompEq, Token::isAndType);
+ParserResult Parser::parseLogXor() {
+	return parseBinary(&Parser::parseLogAnd, Token::isLogXorType);
+}
+
+ParserResult Parser::parseLogAnd() {
+	return parseBinary(&Parser::parseCompEq, Token::isLogAndType);
 }
 
 ParserResult Parser::parseCompEq() {
@@ -65,11 +69,23 @@ ParserResult Parser::parseMathAdd() {
 }
 
 ParserResult Parser::parseMathMul() {
-	return parseBinary(&Parser::parseUnary, Token::isMulType);
+	return parseBinary(&Parser::parseBitOr, Token::isMulType);
+}
+
+ParserResult Parser::parseBitOr() {
+	return parseBinary(&Parser::parseBitXor, Token::isBitOrType);
+}
+
+ParserResult Parser::parseBitXor() {
+	return parseBinary(&Parser::parseBitAnd, Token::isBitOrType);
+}
+
+ParserResult Parser::parseBitAnd() {
+	return parseBinary(&Parser::parseUnary, Token::isBitAndType);
 }
 
 ParserResult Parser::parseUnary() {
-	if (Token::isAddType(currentToken_->type())) {
+	if (Token::isUnaryType(currentToken_->type())) {
 		Token* op = currentToken_;
 		advance();
 		ParserResult inner = parseUnary();
@@ -88,7 +104,7 @@ ParserResult Parser::parseSimple() {
 		advance();
 	} else if (currentToken_->type() == Token::Type::LPAREN) {
 		advance();
-		ParserResult inner = parseMathAdd();
+		ParserResult inner = parseLogOr();
 		if (inner.error.isError())
 			return ParserResult{ inner.error, nullptr };
 		if (currentToken_->type() != Token::Type::RPAREN)

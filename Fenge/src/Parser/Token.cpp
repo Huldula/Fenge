@@ -55,12 +55,26 @@ bool Token::isLiteralType(Type type) {
 	return type == Type::INT || type == Type::FLOAT || type == Type::IDENTIFIER;
 }
 
-bool Token::isOrType(Type type) {
-	return type == Type::OR;
+bool Token::isUnaryType(Type type) {
+	return type == Type::LOG_NOT || type == Type::BIT_NOT || isLogAndType(type);
 }
 
-bool Token::isAndType(Type type) {
-	return type == Type::AND;
+bool Token::isLogType(Type type) {
+	return isLogOrType(type) || isLogXorType(type) || isLogAndType(type) || type == Type::LOG_NOT;
+}
+
+
+
+bool Token::isLogOrType(Type type) {
+	return type == Type::LOG_OR;
+}
+
+bool Token::isLogXorType(Type type) {
+	return type == Type::LOG_XOR;
+}
+
+bool Token::isLogAndType(Type type) {
+	return type == Type::LOG_AND;
 }
 
 bool Token::isCompEqType(Type type) {
@@ -77,6 +91,18 @@ bool Token::isAddType(Type type) {
 
 bool Token::isMulType(Type type) {
 	return type == Type::MUL || type == Type::DIV || type == Type::MOD;
+}
+
+bool Token::isBitOrType(Type type) {
+	return type == Type::BIT_OR;
+}
+
+bool Token::isBitXorType(Type type) {
+	return type == Type::BIT_XOR;
+}
+
+bool Token::isBitAndType(Type type) {
+	return type == Type::BIT_AND;
 }
 
 const Token::Type Token::type() const {

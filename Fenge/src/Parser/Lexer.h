@@ -37,6 +37,9 @@ private:
 	Token* makeNOT_NE();
 	Token* makeLT_LTE();
 	Token* makeGT_GTE();
+	Token* makeOR();
+	Token* makeXOR();
+	Token* makeAND();
 };
 
 

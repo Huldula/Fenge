@@ -54,10 +54,14 @@ LexerResult Lexer::generateTokens() {
 			result.tokens.push_back(makeLT_LTE());
 		} else if (currentChar_ == '>') {
 			result.tokens.push_back(makeGT_GTE());
-		} else if (currentChar_ == '&') {
-			pushBackAdvance(result, new Token(Token::Type::AND, nullptr));
 		} else if (currentChar_ == '|') {
-			pushBackAdvance(result, new Token(Token::Type::OR, nullptr));
+			result.tokens.push_back(makeOR());
+		} else if (currentChar_ == '^') {
+			result.tokens.push_back(makeXOR());
+		} else if (currentChar_ == '&') {
+			result.tokens.push_back(makeAND());
+		} else if (currentChar_ == '~') {
+			pushBackAdvance(result, new Token(Token::Type::BIT_NOT, nullptr));
 		} else {
 			result.error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;
@@ -127,7 +131,7 @@ Token* Lexer::makeNOT_NE() {
 		advance();
 		return new Token(Token::Type::NE, nullptr);
 	} else {
-		return new Token(Token::Type::NOT, nullptr);
+		return new Token(Token::Type::LOG_NOT, nullptr);
 	}
 }
 
@@ -148,6 +152,36 @@ Token* Lexer::makeGT_GTE() {
 		return new Token(Token::Type::GTE, nullptr);
 	} else {
 		return new Token(Token::Type::GT, nullptr);
+	}
+}
+
+Token* Lexer::makeOR() {
+	advance();
+	if (currentChar_ == '|') {
+		advance();
+		return new Token(Token::Type::LOG_OR, nullptr);
+	} else {
+		return new Token(Token::Type::BIT_OR, nullptr);
+	}
+}
+
+Token* Lexer::makeXOR() {
+	advance();
+	if (currentChar_ == '^') {
+		advance();
+		return new Token(Token::Type::LOG_XOR, nullptr);
+	} else {
+		return new Token(Token::Type::BIT_XOR, nullptr);
+	}
+}
+
+Token* Lexer::makeAND() {
+	advance();
+	if (currentChar_ == '&') {
+		advance();
+		return new Token(Token::Type::LOG_AND, nullptr);
+	} else {
+		return new Token(Token::Type::BIT_AND, nullptr);
 	}
 }
 
