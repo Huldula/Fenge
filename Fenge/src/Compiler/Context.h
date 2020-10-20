@@ -21,6 +21,15 @@ public:
 		}
 		return parent->findVariable(name);
 	}
+
+	Variable findVariableInContext(const std::string& name) {
+		for (Variable& var : variables) {
+			if (name.compare(var.name) == 0) {
+				return var;
+			}
+		}
+		return Variable("", Token::Keyword::NO_KEYWORD);
+	}
 };
 
 }

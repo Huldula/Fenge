@@ -13,7 +13,9 @@ enum class ErrorCode {
 	ILLEGAL_TOKEN,
 	RPAREN_EXPECTED,
 
-	COMPILE_ERROR
+	COMPILE_ERROR,
+	VAR_NOT_FOUND,
+	VAR_ALREADY_EXISTS
 };
 
 struct Error {
@@ -43,6 +45,10 @@ public:
 			return std::string("Expected ')' at index ") + std::to_string(error.pos.index());
 		case ErrorCode::COMPILE_ERROR:
 			return std::string("Compile Error");
+		case ErrorCode::VAR_NOT_FOUND:
+			return std::string("Variable not found");
+		case ErrorCode::VAR_ALREADY_EXISTS:
+			return std::string("Variable already exists");
 		default:
 			return std::string();
 		}

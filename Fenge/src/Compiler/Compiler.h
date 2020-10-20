@@ -14,6 +14,7 @@ public:
 	std::vector<Instruction> instructions;
 
 	CompilerResult(std::vector<Instruction> instructions) : instructions(instructions) { };
+	CompilerResult(Error error) : error(error) { };
 	CompilerResult(Error error, std::vector<Instruction> instructions) : error(error), instructions(instructions) { };
 
 	static CompilerResult generateError() {
@@ -53,7 +54,7 @@ private:
 	CompilerResult visitMathAdd(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitMathMul(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitUnaryExpr(const UnaryNode* node, CBYTE targetReg);
-	CompilerResult visitIntLiteralExpr(const LiteralNode* node, CBYTE targetReg);
+	CompilerResult visitSimple(const LiteralNode* node, CBYTE targetReg);
 
 	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const;
 	CBYTE targetRegOrNextFree(CBYTE targetReg);
