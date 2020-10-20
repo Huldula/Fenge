@@ -1,4 +1,6 @@
 
+assign:				logic-or
+					datatype? IDENTIFIER EQUALS assign
 
 logic-or:			logic-xor (LOG_OR logic-xor)*
 
@@ -27,5 +29,8 @@ unary:				(PLUS|MINUS) unary
 					BIT_NOT unary
 
 simple:				LPAREN math-add RPAREN
-					INT
-					FLOAT
+					INT_LITERAL
+					FLOAT_LITERAL
+					IDENTIFIER
+
+datatype:			INT

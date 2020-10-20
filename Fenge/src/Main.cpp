@@ -21,9 +21,7 @@ std::string getComilerOutput(const std::string& input) {
 
 	Compiler compiler = Compiler();
 	CompilerResult compilerResult = compiler.compile(parserResult.node, 0x3);
-	for (auto instr : compilerResult.instructions) {
-		LOG(instr.toHexString());
-	}
+	LOG(compilerResult.toString());
 
 	delete parserResult.node;
 	delete lexerResult.tokens.back();

@@ -32,6 +32,8 @@ public:
 	static bool isAddType(Type type);
 	static bool isMulType(Type type);
 
+	static bool isDTKeyword(Token* type);
+
 	const Type type() const; 
 	const void* value() const; 
 

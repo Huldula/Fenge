@@ -2,8 +2,11 @@
 
 #include "fgpch.h"
 
-#define BYTE const unsigned char
-#define SHORT const unsigned short
+#define BYTE unsigned char
+#define CBYTE const unsigned char
+#define CSHORT const unsigned short
+#define ADDR unsigned int
+#define CADDR const unsigned int
 
 #define WHITESPACE_CHAR_LIST(T) T(' ') \
 	T('\t') \

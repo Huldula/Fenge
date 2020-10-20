@@ -3,6 +3,8 @@
 #include "Core/Error.h"
 #include "Parser/Nodes.h"
 #include "Instruction.h"
+#include "Variable.h"
+#include "Context.h"
 
 namespace fenge {
 
@@ -15,7 +17,7 @@ public:
 	CompilerResult(Error error, std::vector<Instruction> instructions) : error(error), instructions(instructions) { };
 
 	static CompilerResult generateError() {
-		return CompilerResult(Error(), std::vector<Instruction>());
+		return CompilerResult(Error(ErrorCode::COMPILE_ERROR), std::vector<Instruction>());
 	}
 
 	static CompilerResult generateError(ErrorCode errorCode) {
@@ -29,36 +31,44 @@ class Compiler {
 public:
 	Compiler();
 
-	CompilerResult compile(const Node* node, BYTE targetReg);
+	CompilerResult compile(const Node* node, CBYTE targetReg);
 private:
 
-	CompilerResult visitBinaryExprConvert(const BinaryNode* node, BYTE targetReg,
-		const Instruction::Function func, CompilerResult (Compiler::* converter)(const Node*, BYTE));
-	CompilerResult visitBinaryExpr(const BinaryNode* node, BYTE targetReg, const Instruction::Function func);
-	CompilerResult visitLogExpr(const BinaryNode* node, BYTE targetReg, const Instruction::Function func);
-	CompilerResult compileBool(const Node* node, BYTE targetReg);
+	CompilerResult visitBinaryExprConvert(const BinaryNode* node, CBYTE targetReg,
+		const Instruction::Function func, CompilerResult (Compiler::* converter)(const Node*, CBYTE));
+	CompilerResult visitBinaryExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
+	CompilerResult visitLogExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
+	CompilerResult compileBool(const Node* node, CBYTE targetReg);
 
-	CompilerResult visitLogOr(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitLogXor(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitLogAnd(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitCompEq(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitCompRela(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitBitOr(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitBitXor(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitBitAnd(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitBitShift(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitMathAdd(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitMathMul(const BinaryNode* node, BYTE targetReg);
-	CompilerResult visitUnaryExpr(const UnaryNode* node, BYTE targetReg);
-	CompilerResult visitIntLiteralExpr(const LiteralNode* node, BYTE targetReg);
+	CompilerResult visitAssign(const VarAssignNode* node, CBYTE targetReg);
+	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitLogXor(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitLogAnd(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitCompEq(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitCompRela(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitBitOr(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitBitXor(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitBitAnd(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitBitShift(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitMathAdd(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitMathMul(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitUnaryExpr(const UnaryNode* node, CBYTE targetReg);
+	CompilerResult visitIntLiteralExpr(const LiteralNode* node, CBYTE targetReg);
 
-	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, BYTE targetReg) const;
+	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const;
+	CBYTE targetRegOrNextFree(CBYTE targetReg);
 
-	bool registers[16];
-	size_t nextFreeGPReg() const;
-	const size_t freeReg(const size_t reg);
-	const size_t occupyReg(const size_t reg);
-	bool isGPReg(BYTE reg) const { return reg > 0x7; };
+	bool registers_[16];
+	ADDR addrPointer = 0x0001;
+	Context globalContext_;
+	Context* currContext_;
+
+	CBYTE nextFreeGPReg() const;
+	CBYTE freeReg(CBYTE reg);
+	CBYTE occupyReg(CBYTE reg);
+	bool isGPReg(CBYTE reg) const { return reg > 0x7; };
+
+	CADDR occupyNextAddr();
 };
 
 }

@@ -7,10 +7,7 @@ statement:			RETURN expr?
 expr:				assign*
 
 assign:				logic-or
-					left-side EQUALS assign
-
-left-side:			primary
-					INT IDENTIFIER
+					simple? IDENTIFIER EQUALS assign
 
 logic-or:			logic-xor (LOG_OR logic-xor)*
 

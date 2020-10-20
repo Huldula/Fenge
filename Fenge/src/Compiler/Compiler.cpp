@@ -8,13 +8,15 @@ namespace fenge {
 
 Compiler::Compiler() {
 	for (size_t reg = 0; reg <= 0xF; reg++) {
-		registers[reg] = false;
+		registers_[reg] = false;
 	}
+	globalContext_ = Context();
+	currContext_ = &globalContext_;
 }
 
 
 
-CompilerResult Compiler::compile(const Node* node, BYTE targetReg) {
+CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 	if (node == nullptr)
 		return CompilerResult::generateError();
 	switch (node->type()) {
@@ -49,11 +51,13 @@ CompilerResult Compiler::compile(const Node* node, BYTE targetReg) {
 		return visitUnaryExpr((UnaryNode*)node, targetReg);
 	case Node::Type::LITERAL:
 		return visitIntLiteralExpr((LiteralNode*)node, targetReg);
+	case Node::Type::VAR_ASSIGN:
+		return visitAssign((VarAssignNode*)node, targetReg);
 	}
 	return CompilerResult::generateError();
 }
 
-CompilerResult Compiler::compileBool(const Node* node, BYTE targetReg) {
+CompilerResult Compiler::compileBool(const Node* node, CBYTE targetReg) {
 	CompilerResult result = compile(node, targetReg);
 	convertToBoolIfNecessary(result.instructions, node, targetReg);
 	return result;
@@ -62,9 +66,9 @@ CompilerResult Compiler::compileBool(const Node* node, BYTE targetReg) {
 
 CompilerResult Compiler::visitBinaryExprConvert(
 	const BinaryNode* node,
-	BYTE targetReg,
+	CBYTE targetReg,
 	Instruction::Function func,
-	CompilerResult(Compiler::* converter)(const Node*, BYTE)
+	CompilerResult(Compiler::* converter)(const Node*, CBYTE)
 ) {
 	Node* first;
 	Node* second;
@@ -77,12 +81,16 @@ CompilerResult Compiler::visitBinaryExprConvert(
 		second = node->right;
 	}
 
-	const BYTE reg0 = isGPReg(targetReg) ? targetReg : occupyReg(nextFreeGPReg());
+	CBYTE reg0 = targetRegOrNextFree(targetReg);
 	CompilerResult left = (this->*converter)(first, reg0);
+	if (left.error.isError())
+		return CompilerResult::generateError();
 
 	// occupy targetReg for inner nodes
-	const BYTE reg1 = occupyReg(nextFreeGPReg());
+	CBYTE reg1 = occupyReg(nextFreeGPReg());
 	CompilerResult right = (this->*converter)(second, reg1);
+	if (right.error.isError())
+		return CompilerResult::generateError();
 	freeReg(reg1);
 
 	// free after compiling second, so second does not override
@@ -95,32 +103,57 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	return left;
 }
 
-CompilerResult Compiler::visitBinaryExpr(const BinaryNode* node, BYTE targetReg, const Instruction::Function func) {
+CompilerResult Compiler::visitBinaryExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func) {
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compile);
 }
 
 
-CompilerResult Compiler::visitLogExpr(const BinaryNode* node, BYTE targetReg, Instruction::Function func) {
+CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, Instruction::Function func) {
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compileBool);
 }
 
 
-CompilerResult Compiler::visitLogOr(const BinaryNode* node, BYTE targetReg) {
+
+
+// optimizer: check if necessary loading to ram or just keep in reg
+CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg) {
+	if (node->dt) {
+		CBYTE reg0 = targetRegOrNextFree(targetReg);
+		CADDR addr0 = occupyNextAddr();
+		currContext_->variables.push_back(
+			Variable(node->name(), node->datatype(), reg0, addr0)
+		);
+	}
+	std::string name = node->name();
+	Variable var = currContext_->findVariable(name);
+	if (var.datatype == Token::Keyword::NO_KEYWORD)
+		return CompilerResult::generateError();
+	CompilerResult inner = compile(node->right, var.reg);
+	if (inner.error.isError())
+		return CompilerResult::generateError();
+	inner.instructions.push_back(
+		InstructionFactory::ST(0x0, var.reg, var.addr)
+	);
+	return inner;
+}
+
+
+CompilerResult Compiler::visitLogOr(const BinaryNode* node, CBYTE targetReg) {
 	return visitLogExpr(node, targetReg, Instruction::Function::OR);
 }
 
 
-CompilerResult Compiler::visitLogXor(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitLogXor(const BinaryNode* node, CBYTE targetReg) {
 	return visitLogExpr(node, targetReg, Instruction::Function::XOR);
 }
 
 
-CompilerResult Compiler::visitLogAnd(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitLogAnd(const BinaryNode* node, CBYTE targetReg) {
 	return visitLogExpr(node, targetReg, Instruction::Function::AND);
 }
 
 
-CompilerResult Compiler::visitCompEq(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitCompEq(const BinaryNode* node, CBYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{
@@ -137,7 +170,7 @@ CompilerResult Compiler::visitCompEq(const BinaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitCompRela(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitCompRela(const BinaryNode* node, CBYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{
@@ -160,21 +193,21 @@ CompilerResult Compiler::visitCompRela(const BinaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitBitOr(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitBitOr(const BinaryNode* node, CBYTE targetReg) {
 	return visitBinaryExpr(node, targetReg, Instruction::Function::OR);
 }
 
 
-CompilerResult Compiler::visitBitXor(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitBitXor(const BinaryNode* node, CBYTE targetReg) {
 	return visitBinaryExpr(node, targetReg, Instruction::Function::XOR);
 }
 
 
-CompilerResult Compiler::visitBitAnd(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitBitAnd(const BinaryNode* node, CBYTE targetReg) {
 	return visitBinaryExpr(node, targetReg, Instruction::Function::AND);
 }
 
-CompilerResult Compiler::visitBitShift(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitBitShift(const BinaryNode* node, CBYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{
@@ -197,7 +230,7 @@ CompilerResult Compiler::visitBitShift(const BinaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitMathAdd(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitMathAdd(const BinaryNode* node, CBYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{
@@ -214,7 +247,7 @@ CompilerResult Compiler::visitMathAdd(const BinaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitMathMul(const BinaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitMathMul(const BinaryNode* node, CBYTE targetReg) {
 	Instruction::Function func;
 	switch (node->op->type())
 	{
@@ -234,19 +267,23 @@ CompilerResult Compiler::visitMathMul(const BinaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) {
 	if (node->op->type() == Token::Type::PLUS)
 		return compile(node->node, targetReg);
 
-	const BYTE reg0 = isGPReg(targetReg) ? targetReg : occupyReg(nextFreeGPReg());
+	CBYTE reg0 = targetRegOrNextFree(targetReg);
 	if (node->op->type() == Token::Type::MINUS) {
 		CompilerResult inner = compile(node->node, reg0);
+		if (inner.error.isError())
+			return CompilerResult::generateError();
 		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::SUB, targetReg, 0x0, reg0));
 		return inner;
 	} else if (node->op->type() == Token::Type::LOG_NOT || node->op->type() == Token::Type::BIT_NOT) {
 		CompilerResult inner = node->op->type() == Token::Type::LOG_NOT
 			? compileBool(node->node, reg0)
 			: compile(node->node, reg0);
+		if (inner.error.isError())
+			return CompilerResult::generateError();
 		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::NOT, targetReg, 0x0, reg0));
 		return inner;
 	} else {
@@ -255,16 +292,20 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, BYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitIntLiteralExpr(const LiteralNode* node, BYTE targetReg) {
-	auto instructions = std::vector<Instruction>({
-		InstructionFactory::LI(targetReg, *(int*)node->token->value())
-		});
-	return CompilerResult(instructions);
+CompilerResult Compiler::visitIntLiteralExpr(const LiteralNode* node, CBYTE targetReg) {
+	Instruction instr = Instruction(0);
+	if (node->token->type() == Token::Type::IDENTIFIER) {
+		instr = InstructionFactory::LD(targetReg, 0x0,
+			currContext_->findVariable(*(std::string*)node->token->value()).addr);
+	} else {
+		instr = InstructionFactory::LI(targetReg, *(int*)node->token->value());
+	}
+	return CompilerResult(std::vector<Instruction>({ instr }));
 }
 
 
 
-void Compiler::convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, BYTE targetReg) const {
+void Compiler::convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const {
 	bool isBool = false;
 	if (node->type() == Node::Type::BINARY) {
 		if (Token::isLogType(((BinaryNode*)node)->op->type()))
@@ -277,32 +318,45 @@ void Compiler::convertToBoolIfNecessary(std::vector<Instruction>& instructions, 
 		instructions.push_back(InstructionFactory::REG(Instruction::Function::GR, targetReg, targetReg, 0x0));
 }
 
+CBYTE Compiler::targetRegOrNextFree(CBYTE targetReg) {
+	return isGPReg(targetReg) ? targetReg : occupyReg(nextFreeGPReg());
+}
 
 
-size_t Compiler::nextFreeGPReg() const {
-	for (size_t reg = 0x8; reg <= 0xF; reg++) {
-		if (!registers[reg])
+CBYTE Compiler::nextFreeGPReg() const {
+	for (BYTE reg = 0x8; reg <= 0xF; reg++) {
+		if (!registers_[reg])
 			return reg;
 	}
 	return 0;
 }
 
-const size_t Compiler::freeReg(const size_t reg) {
-	registers[reg] = false;
+CBYTE Compiler::freeReg(CBYTE reg) {
+	registers_[reg] = false;
 	return reg;
 }
 
-const size_t Compiler::occupyReg(const size_t reg) {
-	registers[reg] = true;
+CBYTE Compiler::occupyReg(CBYTE reg) {
+	registers_[reg] = true;
 	return reg;
 }
 
-
+CADDR Compiler::occupyNextAddr() {
+	return ++addrPointer;
+}
 
 
 
 std::string CompilerResult::toString() const
 {
-	return std::string();
+	if (error.isError()) {
+		return ErrorMessageGenerator::fromError(error);
+	} else {
+		std::string out;
+		for (auto instr : instructions) {
+			out += instr.toHexString() + "\n";
+		}
+		return out;
+	}
 }
 }

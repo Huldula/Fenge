@@ -20,7 +20,7 @@ Token* Parser::peek() {
 }
 
 ParserResult Parser::parse() {
-	return parseLogOr();
+	return parseAssign();
 }
 
 
@@ -42,7 +42,24 @@ ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(T
 
 
 
-
+ParserResult Parser::parseAssign() {
+	Token* datatype = nullptr;
+	if (Token::isDTKeyword(currentToken_)) {
+		datatype = currentToken_;
+		advance();
+	}
+	if (peek()->type() == Token::Type::EQ_ASSIGN) {
+		Token* id = currentToken_;
+		advance();
+		advance();
+		ParserResult right = parseAssign();
+		if (right.error.isError())
+			return ParserResult{ right.error, nullptr };
+		return ParserResult{ Error(), (Node*)new VarAssignNode(datatype, id, right.node) };
+	} else {
+		return parseLogOr();
+	}
+}
 
 ParserResult Parser::parseLogOr() {
 	return parseBinary(&Parser::parseLogXor, Token::isLogOrType);
@@ -108,7 +125,7 @@ ParserResult Parser::parseSimple() {
 		advance();
 	} else if (currentToken_->type() == Token::Type::LPAREN) {
 		advance();
-		ParserResult inner = parseLogOr();
+		ParserResult inner = parseAssign();
 		if (inner.error.isError())
 			return ParserResult{ inner.error, nullptr };
 		if (currentToken_->type() != Token::Type::RPAREN)

@@ -43,7 +43,6 @@ const size_t Token::valueSize() const {
 		return 0;
 	}
 }
-
 Token::Keyword Token::keywordType(const std::string_view in) {
 #define T(name, str) if (in == str) { return Keyword::name; } else
 	KEYWORD_STRING_LIST
@@ -109,6 +108,12 @@ bool Token::isBitShiftType(Type type) {
 	return type == Type::SHL || type == Type::SHR || type == Type::ROTL || type == Type::ROTR;
 }
 
+bool Token::isDTKeyword(Token* token) {
+	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::INT;
+}
+
+
+
 const Token::Type Token::type() const {
 	return type_;
 }
@@ -127,29 +132,25 @@ const void* Token::value() const {
 	TOKEN_STRING_LIST
 #undef T
 	}
-	out += ':';
 	switch (type_) {
 	case Type::INT:
-		out += std::to_string(*(int*)value_);
+		out += ":" + std::to_string(*(int*)value_);
 		break;
 	case Type::FLOAT:
-		out += std::to_string(*(double*)value_);
+		out += ":" + std::to_string(*(double*)value_);
 		break;
 	case Type::KEYWORD:
 		switch (*(Keyword*)value_) {
 #define T(name, str) \
 			case Keyword::name: \
-				out += #name; \
+				out += ":" + std::string(#name); \
 				break;
 		KEYWORD_STRING_LIST
 #undef T
 		}
 		break;
 	case Type::IDENTIFIER:
-		out += *((std::string*)value_);
-		break;
-	default:
-		out += "_";
+		out += ":" + *((std::string*)value_);
 		break;
 	}
 	out += "]";
