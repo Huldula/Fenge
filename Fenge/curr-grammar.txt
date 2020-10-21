@@ -1,9 +1,12 @@
 statement-list:		(assign SEMICOLON)*
 
-statement:			assign
+statement:			var-def
+					assign
+
+var-def:			datatype IDENTIFIER EQUALS assign
 
 assign:				logic-or
-					datatype? IDENTIFIER EQUALS assign
+					IDENTIFIER EQUALS assign
 
 logic-or:			logic-xor (LOG_OR logic-xor)*
 

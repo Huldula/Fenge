@@ -53,7 +53,7 @@ public:
 		case ErrorCode::SEMICOLON_EXPECTED:
 			return std::string("Seimcolon expected");
 		default:
-			return std::string();
+			return std::string("Internal Error");
 		}
 	}
 };

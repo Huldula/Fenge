@@ -15,7 +15,7 @@ public:
 
 	std::string name;
 	Token::Keyword datatype;
-	CBYTE reg = 0x0; // 0x0 means not in reg
+	BYTE reg = 0x0; // 0x0 means not in reg
 	CADDR addr = 0;
 };
 

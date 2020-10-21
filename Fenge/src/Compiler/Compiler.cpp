@@ -8,7 +8,7 @@ namespace fenge {
 
 Compiler::Compiler() {
 	for (size_t reg = 0; reg <= 0xF; reg++) {
-		registers_[reg] = false;
+		registers_[reg] = Register();
 	}
 	globalContext_ = Context();
 	currContext_ = &globalContext_;
@@ -75,7 +75,9 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	Node* first;
 	Node* second;
 	// doing literal last requires less registers
-	if (node->left->type() == Node::Type::LITERAL) {
+	if (node->left->type() == Node::Type::LITERAL
+		|| node->left->type() == Node::Type::VAR_ASSIGN
+		&& ((VarAssignNode*)node->left)->right->type() == Node::Type::LITERAL) {
 		first = node->right;
 		second = node->left;
 	} else {
@@ -84,35 +86,84 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	}
 
 	CBYTE reg0 = targetRegOrNextFree(targetReg);
-	CompilerResult left = (this->*converter)(first, reg0);
-	if (left.error.isError())
-		return left;
+	CompilerResult firstResult = (this->*converter)(first, reg0);
+	if (firstResult.error.isError())
+		return firstResult;
 
 	// occupy targetReg for inner nodes
-	CBYTE reg1 = occupyReg(nextFreeGPReg());
-	CompilerResult right = (this->*converter)(second, reg1);
-	if (right.error.isError())
-		return right;
+	BYTE reg1 = occupyReg(nextFreeGPReg());
+	CompilerResult secondResult = (this->*converter)(second, reg1);
+	if (secondResult.error.isError())
+		return secondResult;
 	freeReg(reg1);
 
 	// free after compiling second, so second does not override
 	if (!isGPReg(targetReg))
 		freeReg(reg0);
 
-	left.instructions.insert(left.instructions.end(), right.instructions.begin(), right.instructions.end());
-	left.instructions.push_back(InstructionFactory::REG(func, targetReg, reg0, reg1));
+	firstResult.instructions.insert(firstResult.instructions.end(),
+		secondResult.instructions.begin(), secondResult.instructions.end());
+	firstResult.instructions.push_back(InstructionFactory::REG(func, targetReg, reg0, reg1));
 
-	return left;
+	return firstResult;
 }
 
 CompilerResult Compiler::visitBinaryExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func) {
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compile);
 }
 
-
 CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, Instruction::Function func) {
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compileBool);
 }
+
+CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg) {
+	const std::string& name = node->name();
+
+	if (currContext_->findVariableInContext(name).datatype != Token::Keyword::NO_KEYWORD)
+		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
+	CBYTE reg0 = targetRegOrNextFree(targetReg);
+	CompilerResult inner = compile(node->right, reg0);
+	if (inner.error.isError())
+		return inner;
+
+	CADDR addr0 = occupyNextAddr();
+	Variable var = Variable(name, node->datatype(), reg0, addr0);
+	currContext_->variables.push_back(var);
+
+	inner.instructions.push_back(
+		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
+	);
+	setRegVar(var.reg, &var);
+	return inner;
+}
+
+CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg) {
+	const std::string& name = node->name();
+
+	Variable var = currContext_->findVariable(name);
+	if (var.datatype == Token::Keyword::NO_KEYWORD)
+		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
+	CBYTE reg0 = var.reg ? var.reg : targetRegOrNextFree(targetReg);
+	var.reg = reg0;
+
+	CompilerResult inner = compile(node->right, reg0);
+	if (inner.error.isError())
+		return inner;
+	inner.instructions.push_back(
+		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
+	);
+	if (var.reg != targetReg && isGPReg(targetReg)) {
+		inner.instructions.push_back(
+			InstructionFactory::REG(Instruction::Function::MOV, targetReg, var.reg, var.reg)
+		);
+	}
+	
+	setRegVar(var.reg, &var);
+	return inner;
+}
+
+
+
 
 
 
@@ -129,30 +180,11 @@ CompilerResult Compiler::visitStatementList(const BinaryNode* node, CBYTE target
 
 // optimizer: check if necessary loading to ram or just keep in reg
 CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg) {
-	std::string name = node->name();
-	CBYTE reg0 = targetRegOrNextFree(targetReg);
-
-	CompilerResult inner = compile(node->right, reg0);
-	if (inner.error.isError())
-		return inner;
-
 	if (node->dt) {
-		if (currContext_->findVariableInContext(name).datatype != Token::Keyword::NO_KEYWORD)
-			return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
-		CADDR addr0 = occupyNextAddr();
-		currContext_->variables.push_back(
-			Variable(name, node->datatype(), reg0, addr0)
-		);
+		return visitVarDef(node, targetReg);
+	} else {
+		return visitVarAss(node, targetReg);
 	}
-
-	Variable var = currContext_->findVariable(name);
-	if (var.datatype == Token::Keyword::NO_KEYWORD)
-		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
-	inner.instructions.push_back(
-		InstructionFactory::ST(0x0, var.reg, var.addr)
-	);
-	freeReg(var.reg);
-	return inner;
 }
 
 
@@ -294,7 +326,7 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 		CompilerResult inner = compile(node->node, reg0);
 		if (inner.error.isError())
 			return inner;
-		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::SUB, targetReg, 0x0, reg0));
+		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::SUB, targetReg, Register::ZERO, reg0));
 		return inner;
 	} else if (node->op->type() == Token::Type::LOG_NOT || node->op->type() == Token::Type::BIT_NOT) {
 		CompilerResult inner = node->op->type() == Token::Type::LOG_NOT
@@ -302,7 +334,7 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 			: compile(node->node, reg0);
 		if (inner.error.isError())
 			return inner;
-		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::NOT, targetReg, 0x0, reg0));
+		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::NOT, targetReg, Register::ZERO, reg0));
 		return inner;
 	} else {
 		return CompilerResult::generateError();
@@ -313,8 +345,16 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 	Instruction instr = Instruction(0);
 	if (node->token->type() == Token::Type::IDENTIFIER) {
-		instr = InstructionFactory::LD(targetReg, 0x0,
-			currContext_->findVariable(*(std::string*)node->token->value()).addr);
+		Variable var = currContext_->findVariable(*(std::string*)node->token->value());
+		if (var.datatype == Token::Keyword::NO_KEYWORD)
+			return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
+		if (var.reg)
+			if (var.reg != targetReg) {
+				instr = InstructionFactory::REG(Instruction::Function::MOV, targetReg, var.reg, var.reg);
+				freeReg(var.reg);
+			}
+		else
+			instr = InstructionFactory::LD(targetReg, Register::ZERO, var.addr);
 	} else {
 		instr = InstructionFactory::LI(targetReg, *(int*)node->token->value());
 	}
@@ -342,25 +382,33 @@ CBYTE Compiler::targetRegOrNextFree(CBYTE targetReg) {
 
 
 CBYTE Compiler::nextFreeGPReg() const {
-	for (BYTE reg = 0x8; reg <= 0xF; reg++) {
-		if (!registers_[reg])
+	for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
+		if (!registers_[reg].isOccupied)
 			return reg;
 	}
 	return 0;
 }
 
 CBYTE Compiler::freeReg(CBYTE reg) {
-	registers_[reg] = false;
+	registers_[reg].isOccupied = false;
 	return reg;
 }
 
 CBYTE Compiler::occupyReg(CBYTE reg) {
-	registers_[reg] = true;
+	registers_[reg].isOccupied = true;
 	return reg;
 }
 
 CADDR Compiler::occupyNextAddr() {
 	return ++addrPointer;
+}
+
+void Compiler::setRegVar(CBYTE reg, Variable* var) {
+	registers_[reg].containedVar = var;
+}
+
+void Compiler::delRegVar(CBYTE reg) {
+	registers_[reg].containedVar = nullptr;
 }
 
 

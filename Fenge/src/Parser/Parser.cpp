@@ -22,11 +22,13 @@ Token* Parser::peek() {
 }
 
 ParserResult Parser::parse() {
-	return parseStatementList();
+	ParserResult result = parseStatementList();
+	if (currentToken_->type() != Token::Type::EOS)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN, pos_), nullptr };
+	return result;
 }
 
-
-ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(Token::Type)) {
+ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type), bool maybe) {
 	ParserResult left = (this->*toCall)();
 	if (left.error.isError())
 		return ParserResult{ left.error, nullptr };
@@ -34,23 +36,7 @@ ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(T
 	while (isType(currentToken_->type())) {
 		Token* op = currentToken_;
 		advance();
-		right = (this->*toCall)();
-		if (right.error.isError())
-			return ParserResult{ right.error, nullptr };
-		left.node = (Node*)new BinaryNode(left.node, op, right.node);
-	}
-	return ParserResult{ Error(), left.node };
-}
-
-ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type)) {
-	ParserResult left = (this->*toCall)();
-	if (left.error.isError())
-		return ParserResult{ left.error, nullptr };
-	ParserResult right;
-	while (isType(currentToken_->type())) {
-		Token* op = currentToken_;
-		advance();
-		if (currentToken_->type() == Token::Type::EOS)
+		if (maybe && currentToken_->type() == Token::Type::EOS)
 			break;
 		right = (this->*toCall)();
 		if (right.error.isError())
@@ -60,22 +46,11 @@ ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isT
 	return ParserResult{ Error(), left.node };
 }
 
-
-
-ParserResult Parser::parseStatementList() {
-	return parseMaybeBinary(&Parser::parseStatement, Token::isSemicolonType);
+ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(Token::Type)) {
+	return parseMaybeBinary(toCall, isType, false);
 }
 
-ParserResult Parser::parseStatement() {
-	return parseAssign();
-}
-
-ParserResult Parser::parseAssign() {
-	Token* datatype = nullptr;
-	if (Token::isDTKeyword(currentToken_)) {
-		datatype = currentToken_;
-		advance();
-	}
+ParserResult Parser::parseAssign(Token* datatype) {
 	if (peek()->type() == Token::Type::EQ_ASSIGN) {
 		Token* id = currentToken_;
 		advance();
@@ -87,6 +62,35 @@ ParserResult Parser::parseAssign() {
 	} else {
 		return parseLogOr();
 	}
+}
+
+
+
+
+
+
+
+
+
+ParserResult Parser::parseStatementList() {
+	return parseMaybeBinary(&Parser::parseStatement, Token::isSemicolonType, true);
+}
+
+ParserResult Parser::parseStatement() {
+	Token* datatype = nullptr;
+	if (Token::isDTKeyword(currentToken_)) {
+		datatype = currentToken_;
+		advance();
+	}
+	return parseAssign(datatype);
+}
+
+ParserResult Parser::parseVarDef() {
+	return parseAssign();
+}
+
+ParserResult Parser::parseAssign() {
+	return parseAssign(nullptr);
 }
 
 ParserResult Parser::parseLogOr() {

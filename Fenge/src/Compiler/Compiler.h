@@ -5,6 +5,7 @@
 #include "Instruction.h"
 #include "Variable.h"
 #include "Context.h"
+#include "Register.h"
 
 namespace fenge {
 
@@ -40,6 +41,8 @@ private:
 	CompilerResult visitBinaryExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
 	CompilerResult visitLogExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
 	CompilerResult compileBool(const Node* node, CBYTE targetReg);
+	CompilerResult visitVarDef(const VarAssignNode* node, CBYTE targetReg);
+	CompilerResult visitVarAss(const VarAssignNode* node, CBYTE targetReg);
 
 	CompilerResult visitStatementList(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitAssign(const VarAssignNode* node, CBYTE targetReg);
@@ -60,7 +63,7 @@ private:
 	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const;
 	CBYTE targetRegOrNextFree(CBYTE targetReg);
 
-	bool registers_[16];
+	Register registers_[16];
 	ADDR addrPointer = 0x0001;
 	Context globalContext_;
 	Context* currContext_;
@@ -68,7 +71,9 @@ private:
 	CBYTE nextFreeGPReg() const;
 	CBYTE freeReg(CBYTE reg);
 	CBYTE occupyReg(CBYTE reg);
-	bool isGPReg(CBYTE reg) const { return reg > 0x7; };
+	void setRegVar(CBYTE reg, Variable* var);
+	void delRegVar(CBYTE reg);
+	bool isGPReg(CBYTE reg) const { return reg >= Register::GP_MIN && reg <= Register::GP_MAX; };
 
 	CADDR occupyNextAddr();
 };

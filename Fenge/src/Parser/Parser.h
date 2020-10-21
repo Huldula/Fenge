@@ -20,11 +20,13 @@ public:
 	explicit Parser(const std::vector<Token*>& input);
 
 	ParserResult parse();
+	ParserResult parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type), bool maybe);
 	ParserResult parseBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type));
-	ParserResult parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type));
+	ParserResult parseAssign(Token* datatype);
 
 	ParserResult parseStatementList();
 	ParserResult parseStatement();
+	ParserResult parseVarDef();
 	ParserResult parseAssign();
 	ParserResult parseLogOr();
 	ParserResult parseLogXor();
