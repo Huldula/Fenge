@@ -20,6 +20,7 @@ public:
 	static bool isUnaryType(Type type);
 	static bool isLogType(Type type);
 
+	static bool isSemicolonType(Type type);
 	static bool isLogOrType(Type type);
 	static bool isLogXorType(Type type);
 	static bool isLogAndType(Type type);
@@ -75,6 +76,7 @@ private:
 	T(ROTL, "<<<") \
 	T(ROTR, ">>>") \
 	T(EQ_ASSIGN, "=") \
+	T(SEMICOLON, ";") \
 	T(EOS, "\0")
 
 #define KEYWORD_STRING_LIST \

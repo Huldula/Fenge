@@ -22,7 +22,9 @@ CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 	switch (node->type()) {
 	case Node::Type::BINARY:
 		#define binaryNode ((BinaryNode*)node)
-		if (Token::isLogOrType(binaryNode->op->type())) {
+		if (Token::isSemicolonType(binaryNode->op->type())) {
+			return visitStatementList(binaryNode, targetReg);
+		} else if (Token::isLogOrType(binaryNode->op->type())) {
 			return visitLogOr(binaryNode, targetReg);
 		} else if (Token::isLogXorType(binaryNode->op->type())) {
 			return visitLogXor(binaryNode, targetReg);
@@ -114,6 +116,16 @@ CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, I
 
 
 
+CompilerResult Compiler::visitStatementList(const BinaryNode* node, CBYTE targetReg) {
+	CompilerResult left = compile(node->left, targetReg);
+	if (left.error.isError())
+		return left;
+	CompilerResult right = compile(node->right, targetReg);
+	if (right.error.isError())
+		return right;
+	left.instructions.insert(left.instructions.end(), right.instructions.begin(), right.instructions.end());
+	return left;
+}
 
 // optimizer: check if necessary loading to ram or just keep in reg
 CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg) {
@@ -139,6 +151,7 @@ CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg)
 	inner.instructions.push_back(
 		InstructionFactory::ST(0x0, var.reg, var.addr)
 	);
+	freeReg(var.reg);
 	return inner;
 }
 

@@ -16,11 +16,13 @@ Token* Parser::advance() {
 }
 
 Token* Parser::peek() {
+	if (currentToken_->type() == Token::Type::EOS)
+		return currentToken_;
 	return input_.at((size_t)pos_ + 1);
 }
 
 ParserResult Parser::parse() {
-	return parseAssign();
+	return parseStatementList();
 }
 
 
@@ -40,7 +42,33 @@ ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(T
 	return ParserResult{ Error(), left.node };
 }
 
+ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type)) {
+	ParserResult left = (this->*toCall)();
+	if (left.error.isError())
+		return ParserResult{ left.error, nullptr };
+	ParserResult right;
+	while (isType(currentToken_->type())) {
+		Token* op = currentToken_;
+		advance();
+		if (currentToken_->type() == Token::Type::EOS)
+			break;
+		right = (this->*toCall)();
+		if (right.error.isError())
+			return ParserResult{ right.error, nullptr };
+		left.node = (Node*)new BinaryNode(left.node, op, right.node);
+	}
+	return ParserResult{ Error(), left.node };
+}
 
+
+
+ParserResult Parser::parseStatementList() {
+	return parseMaybeBinary(&Parser::parseStatement, Token::isSemicolonType);
+}
+
+ParserResult Parser::parseStatement() {
+	return parseAssign();
+}
 
 ParserResult Parser::parseAssign() {
 	Token* datatype = nullptr;

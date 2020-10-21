@@ -21,7 +21,10 @@ public:
 
 	ParserResult parse();
 	ParserResult parseBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type));
+	ParserResult parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type));
 
+	ParserResult parseStatementList();
+	ParserResult parseStatement();
 	ParserResult parseAssign();
 	ParserResult parseLogOr();
 	ParserResult parseLogXor();

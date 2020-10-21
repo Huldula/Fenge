@@ -15,7 +15,8 @@ enum class ErrorCode {
 
 	COMPILE_ERROR,
 	VAR_NOT_FOUND,
-	VAR_ALREADY_EXISTS
+	VAR_ALREADY_EXISTS,
+	SEMICOLON_EXPECTED
 };
 
 struct Error {
@@ -49,6 +50,8 @@ public:
 			return std::string("Variable not found");
 		case ErrorCode::VAR_ALREADY_EXISTS:
 			return std::string("Variable already exists");
+		case ErrorCode::SEMICOLON_EXPECTED:
+			return std::string("Seimcolon expected");
 		default:
 			return std::string();
 		}

@@ -41,6 +41,7 @@ private:
 	CompilerResult visitLogExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
 	CompilerResult compileBool(const Node* node, CBYTE targetReg);
 
+	CompilerResult visitStatementList(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitAssign(const VarAssignNode* node, CBYTE targetReg);
 	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogXor(const BinaryNode* node, CBYTE targetReg);

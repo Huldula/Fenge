@@ -50,8 +50,7 @@ void testInstructionFactory() {
 	ASSERT(InstructionFactory::RET(), 0x00000A);
 }
 
-int main() {
-	//testInstructionFactory();
+void consoleInput() {
 	std::string input;
 	while (true) {
 		std::cout << "> " << std::flush;
@@ -60,5 +59,25 @@ int main() {
 			break;
 		std::cout << getComilerOutput(input) << std::endl;
 	}
+}
+
+
+void fileInput(const std::string& fileName) {
+	std::ifstream file;
+	std::stringstream stream;
+	std::string str;
+	file.open(fileName);
+	while (getline(file, str)) {
+		LOG(str);
+		stream << str;
+	}
+	file.close();
+	std::cout << getComilerOutput(stream.str()) << std::endl;
+}
+
+int main() {
+	//testInstructionFactory();
+	//consoleInput();
+	fileInput("R:\\Code\\fenge\\examples\\vardecl.fluff");
 	return 0;
 }

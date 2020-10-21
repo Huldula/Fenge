@@ -63,6 +63,9 @@ bool Token::isLogType(Type type) {
 }
 
 
+bool Token::isSemicolonType(Type type) {
+	return type == Type::SEMICOLON;
+}
 
 bool Token::isLogOrType(Type type) {
 	return type == Type::LOG_OR;

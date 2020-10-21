@@ -1,3 +1,7 @@
+statement-list:		(assign SEMICOLON)*
+
+statement:			assign
+
 assign:				logic-or
 					datatype? IDENTIFIER EQUALS assign
 

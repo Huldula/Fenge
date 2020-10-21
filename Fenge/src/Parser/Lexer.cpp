@@ -62,6 +62,8 @@ LexerResult Lexer::generateTokens() {
 			result.tokens.push_back(makeAND());
 		} else if (currentChar_ == '~') {
 			pushBackAdvance(result, new Token(Token::Type::BIT_NOT, nullptr));
+		} else if (currentChar_ == ';') {
+			pushBackAdvance(result, new Token(Token::Type::SEMICOLON, nullptr));
 		} else {
 			result.error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;
