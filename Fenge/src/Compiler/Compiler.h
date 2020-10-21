@@ -13,10 +13,12 @@ class CompilerResult {
 public:
 	Error error;
 	std::vector<Instruction> instructions;
+	BYTE actualTarget = Register::ZERO;
 
-	CompilerResult(std::vector<Instruction> instructions) : instructions(instructions) { };
+	//CompilerResult(std::vector<Instruction> instructions) : instructions(instructions) { };
+	CompilerResult(std::vector<Instruction> instructions, CBYTE actualTarget)
+		: instructions(instructions), actualTarget(actualTarget) { };
 	CompilerResult(Error error) : error(error) { };
-	CompilerResult(Error error, std::vector<Instruction> instructions) : error(error), instructions(instructions) { };
 
 	static CompilerResult generateError() {
 		return CompilerResult(Error(ErrorCode::COMPILE_ERROR), std::vector<Instruction>());
@@ -27,6 +29,8 @@ public:
 	}
 
 	[[nodiscard]] std::string toString() const;
+private:
+	CompilerResult(Error error, std::vector<Instruction> instructions) : error(error), instructions(instructions) { };
 };
 
 class Compiler {

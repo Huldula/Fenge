@@ -137,7 +137,7 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 	return inner;
 }
 
-CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg) {
+CompilerResult Compiler::visitVarAss(const VarAssignNode* node, BYTE targetReg) {
 	const std::string& name = node->name();
 
 	Variable var = currContext_->findVariable(name);
@@ -152,13 +152,11 @@ CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg)
 	inner.instructions.push_back(
 		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
 	);
-	if (var.reg != targetReg && isGPReg(targetReg)) {
-		inner.instructions.push_back(
-			InstructionFactory::REG(Instruction::Function::MOV, targetReg, var.reg, var.reg)
-		);
-	}
-	
+
 	setRegVar(var.reg, &var);
+	if (var.reg != targetReg) {
+		inner.actualTarget = var.reg;
+	}
 	return inner;
 }
 
@@ -343,22 +341,22 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 
 
 CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
-	Instruction instr = Instruction(0);
 	if (node->token->type() == Token::Type::IDENTIFIER) {
 		Variable var = currContext_->findVariable(*(std::string*)node->token->value());
 		if (var.datatype == Token::Keyword::NO_KEYWORD)
 			return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
-		if (var.reg)
-			if (var.reg != targetReg) {
-				instr = InstructionFactory::REG(Instruction::Function::MOV, targetReg, var.reg, var.reg);
-				freeReg(var.reg);
-			}
-		else
-			instr = InstructionFactory::LD(targetReg, Register::ZERO, var.addr);
+		if (var.reg) {
+			return CompilerResult(std::vector<Instruction>(), var.reg);
+		} else {
+			return CompilerResult(std::vector<Instruction>({
+				InstructionFactory::LD(targetReg, Register::ZERO, var.addr)
+				}), targetReg);
+		}
 	} else {
-		instr = InstructionFactory::LI(targetReg, *(int*)node->token->value());
+		return CompilerResult(std::vector<Instruction>({
+			InstructionFactory::LI(targetReg, *(int*)node->token->value())
+			}), targetReg);
 	}
-	return CompilerResult(std::vector<Instruction>({ instr }));
 }
 
 
