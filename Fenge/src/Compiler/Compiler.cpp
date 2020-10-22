@@ -179,6 +179,21 @@ CompilerResult Compiler::visitStatementList(const BinaryNode* node, CBYTE target
 	return left;
 }
 
+CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg)
+{
+	return CompilerResult(Error());
+}
+
+CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg)
+{
+	return CompilerResult(Error());
+}
+
+CompilerResult Compiler::visitArg(const ArgumentNode* node, CBYTE targetReg)
+{
+	return CompilerResult(Error());
+}
+
 // optimizer: check if necessary loading to ram or just keep in reg
 CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg) {
 	if (node->dt) {

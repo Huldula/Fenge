@@ -87,7 +87,8 @@ public:
 	}
 
 	inline std::string toString() const override {
-		return std::string("( ") + left->toString() + op->toString() + right->toString() + " )";
+		return std::string("( ") + left->toString()
+			+ (op->type() == Token::Type::SEMICOLON ? "\n" : op->toString())+ right->toString() + " )";
 	}
 
 	Type type() const override {
@@ -145,7 +146,7 @@ public:
 
 	inline std::string toString() const override {
 		return std::string("( ") + (dt == nullptr ? "void" : dt->toString()) + id->toString()
-			+ argList->toString() + "{" + block->toString() + "}" + " )";
+			+ (argList == nullptr ? "" : argList->toString()) + "{\n" + block->toString() + "}\n" + " )";
 	}
 
 	Type type() const override {

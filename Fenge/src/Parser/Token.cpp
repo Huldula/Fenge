@@ -123,6 +123,11 @@ bool Token::isReturnKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::RETURN;
 }
 
+bool Token::isAfterSemicolonType(Type type)
+{
+	return type == Type::EOS || type == Type::RBRACE;
+}
+
 
 
 const Token::Type Token::type() const {

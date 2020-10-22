@@ -1,11 +1,12 @@
 statement-list:		assign (SEMICOLON assign)*
 
-statement:			func-def
+statement:			block
+					func-def
 					var-def
 					assign
 					return
 
-func-def:			datatype IDENTIFIER LPAREN arg-list RPAREN block
+func-def:			datatype IDENTIFIER LPAREN arg-list RPAREN statement
 
 arg-list:			(datatype IDENTIFIER)*
 

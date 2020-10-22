@@ -15,7 +15,6 @@ public:
 	std::vector<Instruction> instructions;
 	BYTE actualTarget = Register::ZERO;
 
-	//CompilerResult(std::vector<Instruction> instructions) : instructions(instructions) { };
 	CompilerResult(std::vector<Instruction> instructions, CBYTE actualTarget)
 		: instructions(instructions), actualTarget(actualTarget) { };
 	CompilerResult(Error error) : error(error) { };
@@ -49,6 +48,10 @@ private:
 	CompilerResult visitVarAss(const VarAssignNode* node, CBYTE targetReg);
 
 	CompilerResult visitStatementList(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitFuncDef(const FuncDefNode* node, CBYTE targetReg);
+	CompilerResult visitArgList(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitArg(const ArgumentNode* node, CBYTE targetReg);
+	//CompilerResult visitReturn(const UnaryNode* node, CBYTE targetReg);
 	CompilerResult visitAssign(const VarAssignNode* node, CBYTE targetReg);
 	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogXor(const BinaryNode* node, CBYTE targetReg);

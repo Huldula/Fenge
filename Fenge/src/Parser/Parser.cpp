@@ -16,7 +16,7 @@ Token* Parser::advance() {
 }
 
 Token* Parser::peek(unsigned int count) {
-	if (input_.size() >= (size_t)pos_ + count)
+	if (input_.size() <= (size_t)pos_ + count)
 		return input_.back();
 	return input_.at((size_t)pos_ + count);
 }
@@ -40,7 +40,7 @@ ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isT
 	while (isType(currentToken_->type())) {
 		Token* op = currentToken_;
 		advance();
-		if (maybe && currentToken_->type() == Token::Type::EOS)
+		if (maybe && Token::isAfterSemicolonType(currentToken_->type()))
 			break;
 		right = (this->*toCall)();
 		if (right.error.isError())
@@ -92,6 +92,8 @@ ParserResult Parser::parseStatement() {
 		}
 	} else if (Token::isReturnKeyword(currentToken_)) {
 		return parseReturn();
+	} else if (currentToken_->type() == Token::Type::LBRACE) {
+		return parseBlock();
 	} else {
 		return parseAssign();
 	}
@@ -105,7 +107,7 @@ ParserResult Parser::parseFuncDef() {
 	ParserResult argList = parseArgList();
 	if (argList.error.isError())
 		return argList;
-	ParserResult content = parseBlock();
+	ParserResult content = parseStatement();
 	if (content.error.isError())
 		return content;
 	return ParserResult{ Error(), (Node*)new FuncDefNode(datatype, identifier, argList.node, content.node) };
@@ -113,7 +115,9 @@ ParserResult Parser::parseFuncDef() {
 
 ParserResult Parser::parseArgList() {
 	advance();
-	ParserResult result = parseMaybeBinary(&Parser::parseArg, Token::isColonType, true);
+	ParserResult result;
+	if (currentToken_->type() != Token::Type::RPAREN)
+		result = parseMaybeBinary(&Parser::parseArg, Token::isColonType, true);
 	advance();
 	return result;
 }
@@ -133,6 +137,7 @@ ParserResult Parser::parseBlock() {
 	return result;
 }
 
+// TODO
 ParserResult Parser::parseReturn() {
 	advance();
 	return parseAssign();

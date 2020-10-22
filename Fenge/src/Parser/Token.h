@@ -36,6 +36,7 @@ public:
 
 	static bool isDTKeyword(Token* type);
 	static bool isReturnKeyword(Token* type);
+	static bool isAfterSemicolonType(Type type);
 
 	const Type type() const; 
 	const void* value() const; 
