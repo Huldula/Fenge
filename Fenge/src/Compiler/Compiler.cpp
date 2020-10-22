@@ -327,7 +327,9 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 		CompilerResult inner = compile(node->node, reg0);
 		if (inner.error.isError())
 			return inner;
-		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::SUB, targetReg, Register::ZERO, reg0));
+		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::SUB, targetReg,
+			Register::ZERO, inner.actualTarget));
+		inner.actualTarget = targetReg;
 		return inner;
 	} else if (node->op->type() == Token::Type::LOG_NOT || node->op->type() == Token::Type::BIT_NOT) {
 		CompilerResult inner = node->op->type() == Token::Type::LOG_NOT
@@ -335,7 +337,9 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 			: compile(node->node, reg0);
 		if (inner.error.isError())
 			return inner;
-		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::NOT, targetReg, Register::ZERO, reg0));
+		inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::NOT,
+			targetReg, Register::ZERO, inner.actualTarget));
+		inner.actualTarget = targetReg;
 		return inner;
 	} else {
 		return CompilerResult::generateError();
