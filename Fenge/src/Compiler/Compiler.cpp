@@ -74,15 +74,17 @@ CompilerResult Compiler::visitBinaryExprConvert(
 ) {
 	Node* first;
 	Node* second;
+	bool leftFirst = true;
 	// doing literal last requires less registers
-	if (node->left->type() == Node::Type::LITERAL
-		|| node->left->type() == Node::Type::VAR_ASSIGN
-		&& ((VarAssignNode*)node->left)->right->type() == Node::Type::LITERAL) {
-		first = node->right;
-		second = node->left;
-	} else {
+	if (node->right->type() == Node::Type::LITERAL
+		|| node->right->type() == Node::Type::VAR_ASSIGN
+		&& ((VarAssignNode*)node->right)->right->type() == Node::Type::LITERAL) {
 		first = node->left;
 		second = node->right;
+	} else {
+		first = node->right;
+		second = node->left;
+		leftFirst = false;
 	}
 
 	CBYTE reg0 = targetRegOrNextFree(targetReg);
@@ -103,8 +105,14 @@ CompilerResult Compiler::visitBinaryExprConvert(
 
 	firstResult.instructions.insert(firstResult.instructions.end(),
 		secondResult.instructions.begin(), secondResult.instructions.end());
-	firstResult.instructions.push_back(InstructionFactory::REG(func, targetReg, reg0, reg1));
+	if (leftFirst)
+		firstResult.instructions.push_back(
+			InstructionFactory::REG(func, targetReg, firstResult.actualTarget, secondResult.actualTarget));
+	else
+		firstResult.instructions.push_back(
+			InstructionFactory::REG(func, targetReg, secondResult.actualTarget, firstResult.actualTarget));
 
+	firstResult.actualTarget = targetReg;
 	return firstResult;
 }
 
@@ -127,7 +135,7 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 		return inner;
 
 	CADDR addr0 = occupyNextAddr();
-	Variable var = Variable(name, node->datatype(), reg0, addr0);
+	Variable var = Variable(name, node->datatype(), inner.actualTarget, addr0);
 	currContext_->variables.push_back(var);
 
 	inner.instructions.push_back(
@@ -137,26 +145,21 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 	return inner;
 }
 
-CompilerResult Compiler::visitVarAss(const VarAssignNode* node, BYTE targetReg) {
+CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg) {
 	const std::string& name = node->name();
-
 	Variable var = currContext_->findVariable(name);
 	if (var.datatype == Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
 	CBYTE reg0 = var.reg ? var.reg : targetRegOrNextFree(targetReg);
-	var.reg = reg0;
 
 	CompilerResult inner = compile(node->right, reg0);
 	if (inner.error.isError())
 		return inner;
+	//Instruction::insertIfValid(inner.instructions, movVar(inner.actualTarget, &var));
+	setRegVar(inner.actualTarget, &var);
 	inner.instructions.push_back(
 		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
 	);
-
-	setRegVar(var.reg, &var);
-	if (var.reg != targetReg) {
-		inner.actualTarget = var.reg;
-	}
 	return inner;
 }
 
@@ -166,10 +169,10 @@ CompilerResult Compiler::visitVarAss(const VarAssignNode* node, BYTE targetReg) 
 
 
 CompilerResult Compiler::visitStatementList(const BinaryNode* node, CBYTE targetReg) {
-	CompilerResult left = compile(node->left, targetReg);
+	CompilerResult left = compile(node->left, Register::ZERO);
 	if (left.error.isError())
 		return left;
-	CompilerResult right = compile(node->right, targetReg);
+	CompilerResult right = compile(node->right, Register::ZERO);
 	if (right.error.isError())
 		return right;
 	left.instructions.insert(left.instructions.end(), right.instructions.begin(), right.instructions.end());
@@ -402,7 +405,21 @@ CADDR Compiler::occupyNextAddr() {
 }
 
 void Compiler::setRegVar(CBYTE reg, Variable* var) {
+	freeReg(var->reg);
+	occupyReg(reg);
 	registers_[reg].containedVar = var;
+	var->reg = reg;
+}
+
+Instruction Compiler::movVar(CBYTE reg, Variable* var) {
+	freeReg(var->reg);
+	occupyReg(reg);
+	registers_[reg].containedVar = var;
+	if (var->reg == reg)
+		return Instruction(0);
+	auto out = InstructionFactory::REG(Instruction::Function::MOV, reg, var->reg, var->reg);
+	var->reg = reg;
+	return out;
 }
 
 void Compiler::delRegVar(CBYTE reg) {

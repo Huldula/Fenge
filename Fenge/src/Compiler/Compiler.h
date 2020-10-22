@@ -76,6 +76,7 @@ private:
 	CBYTE freeReg(CBYTE reg);
 	CBYTE occupyReg(CBYTE reg);
 	void setRegVar(CBYTE reg, Variable* var);
+	Instruction movVar(CBYTE reg, Variable* var);
 	void delRegVar(CBYTE reg);
 	bool isGPReg(CBYTE reg) const { return reg >= Register::GP_MIN && reg <= Register::GP_MAX; };
 

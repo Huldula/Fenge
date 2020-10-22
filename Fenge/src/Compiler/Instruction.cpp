@@ -40,6 +40,11 @@ int Instruction::value() const {
 	return value_;
 }
 
+void Instruction::insertIfValid(std::vector<Instruction>& instructions, Instruction& ins) {
+	if (ins.value())
+		instructions.push_back(ins);
+}
+
 std::string Instruction::toHexString() const {
 	std::stringstream stream;
 	stream << std::hex << value_;

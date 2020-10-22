@@ -27,6 +27,8 @@ public:
 
 	int value() const;
 
+	static void insertIfValid(std::vector<Instruction>& instructions, Instruction& ins);
+
 	[[nodiscard]] std::string toHexString() const;
 	[[nodiscard]] std::string toString() const;
 private:
