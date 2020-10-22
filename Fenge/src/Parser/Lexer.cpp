@@ -46,6 +46,14 @@ LexerResult Lexer::generateTokens() {
 			pushBackAdvance(result, new Token(Token::Type::LPAREN, nullptr));
 		} else if (currentChar_ == ')') {
 			pushBackAdvance(result, new Token(Token::Type::RPAREN, nullptr));
+		} else if (currentChar_ == '{') {
+			pushBackAdvance(result, new Token(Token::Type::LBRACE, nullptr));
+		} else if (currentChar_ == '}') {
+			pushBackAdvance(result, new Token(Token::Type::RBRACE, nullptr));
+		} else if (currentChar_ == '[') {
+			pushBackAdvance(result, new Token(Token::Type::LBRACK, nullptr));
+		} else if (currentChar_ == ']') {
+			pushBackAdvance(result, new Token(Token::Type::RBRACK, nullptr));
 		} else if (currentChar_ == '=') {
 			result.tokens.push_back(makeEE_EQASSIGN());
 		} else if (currentChar_ == '!') {

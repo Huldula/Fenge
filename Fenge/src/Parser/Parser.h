@@ -26,6 +26,11 @@ public:
 
 	ParserResult parseStatementList();
 	ParserResult parseStatement();
+	ParserResult parseFuncDef();
+	ParserResult parseArgList();
+	ParserResult parseArg();
+	ParserResult parseBlock();
+	ParserResult parseReturn();
 	ParserResult parseVarDef();
 	ParserResult parseAssign();
 	ParserResult parseLogOr();
@@ -47,6 +52,7 @@ public:
 private:
 	int pos_;
 	Token* advance();
+	Token* peek(unsigned int count);
 	Token* peek();
 	Token* currentToken_;
 	const std::vector<Token*>& input_;

@@ -21,6 +21,7 @@ public:
 	static bool isLogType(Type type);
 
 	static bool isSemicolonType(Type type);
+	static bool isColonType(Type type);
 	static bool isLogOrType(Type type);
 	static bool isLogXorType(Type type);
 	static bool isLogAndType(Type type);
@@ -34,6 +35,7 @@ public:
 	static bool isMulType(Type type);
 
 	static bool isDTKeyword(Token* type);
+	static bool isReturnKeyword(Token* type);
 
 	const Type type() const; 
 	const void* value() const; 
@@ -77,11 +79,18 @@ private:
 	T(ROTR, ">>>") \
 	T(EQ_ASSIGN, "=") \
 	T(SEMICOLON, ";") \
+	T(COLON, ",") \
+	T(LBRACE, "{") \
+	T(RBRACE, "}") \
+	T(LBRACK, "[") \
+	T(RBRACK, "]") \
 	T(EOS, "\0")
 
 #define KEYWORD_STRING_LIST \
 	T(NO_KEYWORD, "") \
-	T(INT, "int")
+	T(INT, "int") \
+	T(VOID, "void") \
+	T(RETURN, "return")
 
 
 enum class Token::Type {

@@ -78,6 +78,6 @@ void fileInput(const std::string& fileName) {
 int main() {
 	//testInstructionFactory();
 	//consoleInput();
-	fileInput("R:\\Code\\fenge\\examples\\vardecl.fluff");
+	fileInput("R:\\Code\\fenge\\examples\\funcdecl.fluff");
 	return 0;
 }

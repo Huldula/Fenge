@@ -1,7 +1,17 @@
-statement-list:		(assign SEMICOLON)*
+statement-list:		assign (SEMICOLON assign)*
 
-statement:			var-def
+statement:			func-def
+					var-def
 					assign
+					return
+
+func-def:			datatype IDENTIFIER LPAREN arg-list RPAREN block
+
+arg-list:			(datatype IDENTIFIER)*
+
+block:				LBRACE statement-list RBRACE
+
+return:				RETURN assign?
 
 var-def:			datatype IDENTIFIER EQUALS assign
 
@@ -34,9 +44,11 @@ unary:				(PLUS|MINUS) unary
 					LOG_NOT unary
 					BIT_NOT unary
 
-simple:				LPAREN math-add RPAREN
+simple:				LPAREN assign RPAREN
 					INT_LITERAL
 					FLOAT_LITERAL
 					IDENTIFIER
+
+
 
 datatype:			INT

@@ -67,6 +67,10 @@ bool Token::isSemicolonType(Type type) {
 	return type == Type::SEMICOLON;
 }
 
+bool Token::isColonType(Type type) {
+	return type == Type::COLON;
+}
+
 bool Token::isLogOrType(Type type) {
 	return type == Type::LOG_OR;
 }
@@ -113,6 +117,10 @@ bool Token::isBitShiftType(Type type) {
 
 bool Token::isDTKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::INT;
+}
+
+bool Token::isReturnKeyword(Token* token) {
+	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::RETURN;
 }
 
 

@@ -15,10 +15,14 @@ Token* Parser::advance() {
 	return currentToken_ = input_.at(pos_);
 }
 
+Token* Parser::peek(unsigned int count) {
+	if (input_.size() >= (size_t)pos_ + count)
+		return input_.back();
+	return input_.at((size_t)pos_ + count);
+}
+
 Token* Parser::peek() {
-	if (currentToken_->type() == Token::Type::EOS)
-		return currentToken_;
-	return input_.at((size_t)pos_ + 1);
+	return peek(1);
 }
 
 ParserResult Parser::parse() {
@@ -31,7 +35,7 @@ ParserResult Parser::parse() {
 ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isType(Token::Type), bool maybe) {
 	ParserResult left = (this->*toCall)();
 	if (left.error.isError())
-		return ParserResult{ left.error, nullptr };
+		return left;
 	ParserResult right;
 	while (isType(currentToken_->type())) {
 		Token* op = currentToken_;
@@ -40,7 +44,7 @@ ParserResult Parser::parseMaybeBinary(ParserResult(Parser::* toCall)(), bool isT
 			break;
 		right = (this->*toCall)();
 		if (right.error.isError())
-			return ParserResult{ right.error, nullptr };
+			return right;
 		left.node = (Node*)new BinaryNode(left.node, op, right.node);
 	}
 	return ParserResult{ Error(), left.node };
@@ -57,7 +61,7 @@ ParserResult Parser::parseAssign(Token* datatype) {
 		advance();
 		ParserResult right = parseAssign();
 		if (right.error.isError())
-			return ParserResult{ right.error, nullptr };
+			return right;
 		return ParserResult{ Error(), (Node*)new VarAssignNode(datatype, id, right.node) };
 	} else {
 		return parseLogOr();
@@ -77,16 +81,67 @@ ParserResult Parser::parseStatementList() {
 }
 
 ParserResult Parser::parseStatement() {
-	Token* datatype = nullptr;
 	if (Token::isDTKeyword(currentToken_)) {
-		datatype = currentToken_;
-		advance();
+		if (peek()->type() == Token::Type::IDENTIFIER && peek(2)->type() == Token::Type::EQ_ASSIGN) {
+			return parseVarDef();
+		} else if (peek()->type() == Token::Type::IDENTIFIER && peek(2)->type() == Token::Type::LPAREN) {
+			return parseFuncDef();
+		} else {
+			advance();
+			return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN, pos_), nullptr };
+		}
+	} else if (Token::isReturnKeyword(currentToken_)) {
+		return parseReturn();
+	} else {
+		return parseAssign();
 	}
-	return parseAssign(datatype);
+}
+
+ParserResult Parser::parseFuncDef() {
+	Token* datatype = currentToken_;
+	advance();
+	Token* identifier = currentToken_;
+	advance();
+	ParserResult argList = parseArgList();
+	if (argList.error.isError())
+		return argList;
+	ParserResult content = parseBlock();
+	if (content.error.isError())
+		return content;
+	return ParserResult{ Error(), (Node*)new FuncDefNode(datatype, identifier, argList.node, content.node) };
+}
+
+ParserResult Parser::parseArgList() {
+	advance();
+	ParserResult result = parseMaybeBinary(&Parser::parseArg, Token::isColonType, true);
+	advance();
+	return result;
+}
+
+ParserResult Parser::parseArg() {
+	Token* datatype = currentToken_;
+	advance();
+	Token* identifier = currentToken_;
+	advance();
+	return ParserResult{ Error(), (Node*)new ArgumentNode(datatype, identifier) };
+}
+
+ParserResult Parser::parseBlock() {
+	advance();
+	ParserResult result = parseStatementList();
+	advance();
+	return result;
+}
+
+ParserResult Parser::parseReturn() {
+	advance();
+	return parseAssign();
 }
 
 ParserResult Parser::parseVarDef() {
-	return parseAssign();
+	Token* datatype = currentToken_;
+	advance();
+	return parseAssign(datatype);
 }
 
 ParserResult Parser::parseAssign() {
@@ -143,7 +198,7 @@ ParserResult Parser::parseUnary() {
 		advance();
 		ParserResult inner = parseUnary();
 		if (inner.error.isError())
-			return ParserResult{ inner.error, nullptr };
+			return inner;
 		return ParserResult{ Error(), (Node*)new UnaryNode(op, inner.node) };
 	} else {
 		return parseSimple();
@@ -159,7 +214,7 @@ ParserResult Parser::parseSimple() {
 		advance();
 		ParserResult inner = parseAssign();
 		if (inner.error.isError())
-			return ParserResult{ inner.error, nullptr };
+			return inner;
 		if (currentToken_->type() != Token::Type::RPAREN)
 			return ParserResult{ Error(ErrorCode::RPAREN_EXPECTED, pos_), nullptr };
 		result.node = inner.node;
