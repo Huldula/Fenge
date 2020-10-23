@@ -9,6 +9,7 @@ public:
 
 	Context* parent = nullptr;
 	std::vector<Variable> variables = std::vector<Variable>();
+	std::vector<Function> functions = std::vector<Function>();
 
 	Variable findVariable(const std::string& name) {
 		for (Variable& var : variables) {
@@ -29,6 +30,27 @@ public:
 			}
 		}
 		return Variable("", Token::Keyword::NO_KEYWORD);
+	}
+
+	Function findFunction(const std::string& name) {
+		for (Function& func : functions) {
+			if (name.compare(func.name) == 0) {
+				return func;
+			}
+		}
+		if (parent == nullptr) {
+			return Function("", Token::Keyword::NO_KEYWORD, this); // Error
+		}
+		return parent->findFunction(name);
+	}
+
+	Function findFunctionInContext(const std::string& name) {
+		for (Function& func : functions) {
+			if (name.compare(func.name) == 0) {
+				return func;
+			}
+		}
+		return Function("", Token::Keyword::NO_KEYWORD, this);
 	}
 };
 

@@ -4,6 +4,7 @@
 #include "Parser/Nodes.h"
 #include "Instruction.h"
 #include "Variable.h"
+#include "Function.h"
 #include "Context.h"
 #include "Register.h"
 
@@ -20,7 +21,7 @@ public:
 	CompilerResult(Error error) : error(error) { };
 
 	static CompilerResult generateError() {
-		return CompilerResult(Error(ErrorCode::COMPILE_ERROR), std::vector<Instruction>());
+		return generateError(ErrorCode::COMPILE_ERROR);
 	}
 
 	static CompilerResult generateError(ErrorCode errorCode) {
@@ -76,6 +77,7 @@ private:
 	Context* currContext_;
 
 	CBYTE nextFreeGPReg() const;
+	CBYTE nextFreeArgReg() const;
 	CBYTE freeReg(CBYTE reg);
 	CBYTE occupyReg(CBYTE reg);
 	void setRegVar(CBYTE reg, Variable* var);

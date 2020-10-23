@@ -55,6 +55,8 @@ CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 		return visitSimple((LiteralNode*)node, targetReg);
 	case Node::Type::VAR_ASSIGN:
 		return visitAssign((VarAssignNode*)node, targetReg);
+	case Node::Type::FUNC_DEF:
+		return visitFuncDef((FuncDefNode*)node, targetReg);
 	}
 	return CompilerResult::generateError();
 }
@@ -179,19 +181,48 @@ CompilerResult Compiler::visitStatementList(const BinaryNode* node, CBYTE target
 	return left;
 }
 
-CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg)
-{
+CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) {
+	Token* returnType = node->dt;
+	Token* identifier = node->id;
+	if (node->argList == nullptr)
+		return CompilerResult(Error());
+	else if (node->argList->type() == Node::Type::BINARY)
+		return visitArgList((BinaryNode*)node->argList, targetReg);
+	else if (node->argList->type() == Node::Type::ARG_NODE)
+		return visitArg((ArgumentNode*)node->argList, targetReg);
 	return CompilerResult(Error());
 }
 
-CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg)
-{
-	return CompilerResult(Error());
+CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
+	LOG((node->left->type() == Node::Type::ARG_NODE ? "gut" : "komisch"));
+	CompilerResult left = node->left->type() == Node::Type::ARG_NODE
+		? visitArg((ArgumentNode*)node->left, targetReg)
+		: visitArgList((BinaryNode*)node->left, targetReg);
+	if (left.error.isError())
+		return left;
+
+	CBYTE secondTargetReg = nextFreeArgReg();
+	CompilerResult right = node->right->type() == Node::Type::ARG_NODE
+		? visitArg((ArgumentNode*)node->right, secondTargetReg)
+		: visitArgList((BinaryNode*)node->right, secondTargetReg);
+	if (right.error.isError())
+		return right;
+
+	left.instructions.insert(left.instructions.end(), right.instructions.begin(), right.instructions.end());
+	return left;
 }
 
-CompilerResult Compiler::visitArg(const ArgumentNode* node, CBYTE targetReg)
-{
-	return CompilerResult(Error());
+CompilerResult Compiler::visitArg(const ArgumentNode* node, CBYTE targetReg) {
+	const std::string& name = node->name();
+	CADDR addr0 = occupyNextAddr();
+	Variable var = Variable(name, node->datatype(), targetReg, addr0);
+	currContext_->variables.push_back(var);
+
+	auto instructions = std::vector<Instruction>({
+		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
+		});
+	setRegVar(var.reg, &var);
+	return CompilerResult(instructions, targetReg);
 }
 
 // optimizer: check if necessary loading to ram or just keep in reg
@@ -403,6 +434,14 @@ CBYTE Compiler::targetRegOrNextFree(CBYTE targetReg) {
 
 CBYTE Compiler::nextFreeGPReg() const {
 	for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
+		if (!registers_[reg].isOccupied)
+			return reg;
+	}
+	return 0;
+}
+
+CBYTE Compiler::nextFreeArgReg() const {
+	for (BYTE reg = Register::ARG_MIN; reg <= Register::ARG_MAX; reg++) {
 		if (!registers_[reg].isOccupied)
 			return reg;
 	}

@@ -13,6 +13,8 @@ public:
 	static CBYTE RET = 0x3;
 	static CBYTE GP_MIN = 0x8;
 	static CBYTE GP_MAX = 0xF;
+	static CBYTE ARG_MIN = 0x3;
+	static CBYTE ARG_MAX = 0x7;
 };
 
 }

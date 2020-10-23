@@ -133,20 +133,21 @@ public:
 	Token* dt;
 	Token* id;
 	Node* argList;
-	Node* block;
+	Node* statement;
 
-	FuncDefNode(Token* dt, Token* id, Node* argList, Node* block) : dt(dt), id(id), argList(argList), block(block) { }
+	FuncDefNode(Token* dt, Token* id, Node* argList, Node* statement)
+		: dt(dt), id(id), argList(argList), statement(statement) { }
 
 	~FuncDefNode() {
 		delete dt;
 		delete id;
 		delete argList;
-		delete block;
+		delete statement;
 	}
 
 	inline std::string toString() const override {
 		return std::string("( ") + (dt == nullptr ? "void" : dt->toString()) + id->toString()
-			+ (argList == nullptr ? "" : argList->toString()) + "{\n" + block->toString() + "}\n" + " )";
+			+ (argList == nullptr ? "" : argList->toString()) + "{\n" + statement->toString() + "}\n" + " )";
 	}
 
 	Type type() const override {
