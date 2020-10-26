@@ -6,9 +6,9 @@ statement:			block
 					assign
 					return
 
-func-def:			datatype IDENTIFIER LPAREN arg-list RPAREN statement
+func-def:			datatype IDENTIFIER LPAREN param-list RPAREN statement
 
-arg-list:			(datatype IDENTIFIER)*
+param-list:			(datatype IDENTIFIER)*
 
 block:				LBRACE statement-list RBRACE
 
@@ -17,7 +17,7 @@ return:				RETURN assign?
 var-def:			datatype IDENTIFIER EQUALS assign
 
 assign:				logic-or
-					IDENTIFIER EQUALS assign
+					left-side EQUALS assign ~~~~~~~~~~~~~~~~~
 
 logic-or:			logic-xor (LOG_OR logic-xor)*
 
@@ -41,9 +41,19 @@ math-add:			math-mul ((PLUS|MINUS) math-mul)*
 
 math-mul:			unary ((MUL|DIV|MOD) unary)*
 
-unary:				(PLUS|MINUS) unary
+unary:				left-side ~~~~~~~~~~~~~~~~~~~~~~~~ start
+					(PLUS|MINUS) unary
 					LOG_NOT unary
 					BIT_NOT unary
+
+left-side:			simple ~~~~~~~~~~~~~~~~~~~~
+					// left-side LBRACK assign RBRACK
+					func-call
+
+func-call:			left-side LPAREN arg-list RPAREN
+
+arg-list:			assign* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end
+					
 
 simple:				LPAREN assign RPAREN
 					INT_LITERAL

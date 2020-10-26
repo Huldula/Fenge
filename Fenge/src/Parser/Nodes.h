@@ -16,7 +16,8 @@ public:
 		BINARY,
 		VAR_ASSIGN,
 		FUNC_DEF,
-		ARG_NODE
+		PARAM_NODE,
+		FUNC_CALL
 	};
 
 	virtual ~Node() {}
@@ -37,7 +38,6 @@ public:
 	LiteralNode(Token* token) : token(token) { }
 
 	~LiteralNode() {
-		delete token;
 	}
 
 	inline std::string toString() const override {
@@ -58,7 +58,6 @@ public:
 	UnaryNode(Token* op, Node* node) : op(op), node(node) { }
 
 	~UnaryNode() {
-		delete op;
 		delete node;
 	}
 
@@ -82,7 +81,6 @@ public:
 
 	~BinaryNode() {
 		delete left;
-		delete op;
 		delete right;
 	}
 
@@ -99,28 +97,23 @@ public:
 class VarAssignNode : Node {
 public:
 	Token* dt = nullptr;
-	Token* id;
+	Node* leftSide;
 	Node* right;
 
-	VarAssignNode(Token* dt, Token* id, Node* right) : dt(dt), id(id), right(right) { }
+	VarAssignNode(Token* dt, Node* leftSide, Node* right) : dt(dt), leftSide(leftSide), right(right) { }
 
 	~VarAssignNode() {
-		delete dt;
-		delete id;
+		delete leftSide;
 		delete right;
 	}
 
 	inline std::string toString() const override {
-		return std::string("( ") + (dt == nullptr ? "" : dt->toString()) + id->toString()
+		return std::string("( ") + (dt == nullptr ? "" : dt->toString()) + leftSide->toString()
 			+ " = " + right->toString() + " )";
 	}
 
 	Type type() const override {
 		return Type::VAR_ASSIGN;
-	}
-
-	const std::string& name() const {
-		return *(std::string*)id->value();
 	}
 
 	const Token::Keyword datatype() const {
@@ -132,22 +125,20 @@ class FuncDefNode : Node {
 public:
 	Token* dt;
 	Token* id;
-	Node* argList;
+	Node* paramList;
 	Node* statement;
 
-	FuncDefNode(Token* dt, Token* id, Node* argList, Node* statement)
-		: dt(dt), id(id), argList(argList), statement(statement) { }
+	FuncDefNode(Token* dt, Token* id, Node* paramList, Node* statement)
+		: dt(dt), id(id), paramList(paramList), statement(statement) { }
 
 	~FuncDefNode() {
-		delete dt;
-		delete id;
-		delete argList;
+		delete paramList;
 		delete statement;
 	}
 
 	inline std::string toString() const override {
 		return std::string("( ") + (dt == nullptr ? "void" : dt->toString()) + id->toString()
-			+ (argList == nullptr ? "" : argList->toString()) + "{\n" + statement->toString() + "}\n" + " )";
+			+ (paramList == nullptr ? "" : paramList->toString()) + "{\n" + statement->toString() + "}\n" + " )";
 	}
 
 	Type type() const override {
@@ -163,16 +154,14 @@ public:
 	}
 };
 
-class ArgumentNode : Node {
+class ParameterNode : Node {
 public:
 	Token* dt;
 	Token* id;
 
-	ArgumentNode(Token* dt, Token* id) : dt(dt), id(id) { }
+	ParameterNode(Token* dt, Token* id) : dt(dt), id(id) { }
 
-	~ArgumentNode() {
-		delete dt;
-		delete id;
+	~ParameterNode() {
 	}
 
 	inline std::string toString() const override {
@@ -180,7 +169,7 @@ public:
 	}
 
 	Type type() const override {
-		return Type::ARG_NODE;
+		return Type::PARAM_NODE;
 	}
 
 	const std::string& name() const {
@@ -189,6 +178,27 @@ public:
 
 	const Token::Keyword datatype() const {
 		return *(Token::Keyword*)dt->value();
+	}
+};
+
+class FuncCallNode : Node {
+public:
+	Node* leftSide;
+	Node* argList;
+
+	FuncCallNode(Node* leftSide, Node* argList) : leftSide(leftSide), argList(argList) { }
+
+	~FuncCallNode() {
+		delete leftSide;
+		delete argList;
+	}
+
+	inline std::string toString() const override {
+		return std::string("( ") + leftSide->toString() + "(" + argList->toString() + ")" " )";
+	}
+
+	Type type() const override {
+		return Type::FUNC_CALL;
 	}
 };
 

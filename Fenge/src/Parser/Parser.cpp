@@ -15,6 +15,11 @@ Token* Parser::advance() {
 	return currentToken_ = input_.at(pos_);
 }
 
+Token* Parser::goBackTo(int pos) {
+	pos_ = pos;
+	return currentToken_ = input_.at(pos_);
+}
+
 Token* Parser::peek(unsigned int count) {
 	if (input_.size() <= (size_t)pos_ + count)
 		return input_.back();
@@ -54,20 +59,6 @@ ParserResult Parser::parseBinary(ParserResult (Parser::*toCall)(), bool isType(T
 	return parseMaybeBinary(toCall, isType, false);
 }
 
-ParserResult Parser::parseAssign(Token* datatype) {
-	if (peek()->type() == Token::Type::EQ_ASSIGN) {
-		Token* id = currentToken_;
-		advance();
-		advance();
-		ParserResult right = parseAssign();
-		if (right.error.isError())
-			return right;
-		return ParserResult{ Error(), (Node*)new VarAssignNode(datatype, id, right.node) };
-	} else {
-		return parseLogOr();
-	}
-}
-
 
 
 
@@ -104,30 +95,37 @@ ParserResult Parser::parseFuncDef() {
 	advance();
 	Token* identifier = currentToken_;
 	advance();
-	ParserResult argList = parseArgList();
-	if (argList.error.isError())
-		return argList;
+	ParserResult paramList = parseParamList();
+	if (paramList.error.isError())
+		return paramList;
 	ParserResult content = parseStatement();
 	if (content.error.isError())
 		return content;
-	return ParserResult{ Error(), (Node*)new FuncDefNode(datatype, identifier, argList.node, content.node) };
+	return ParserResult{ Error(), (Node*)new FuncDefNode(datatype, identifier, paramList.node, content.node) };
 }
 
-ParserResult Parser::parseArgList() {
+ParserResult Parser::parseParamList() {
+	if (currentToken_->type() != Token::Type::LPAREN)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
 	advance();
+
 	ParserResult result;
 	if (currentToken_->type() != Token::Type::RPAREN)
-		result = parseBinary(&Parser::parseArg, Token::isCommaType);
+		result = parseBinary(&Parser::parseParam, Token::isCommaType);
+
+	if (currentToken_->type() != Token::Type::RPAREN)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
 	advance();
+
 	return result;
 }
 
-ParserResult Parser::parseArg() {
+ParserResult Parser::parseParam() {
 	Token* datatype = currentToken_;
 	advance();
 	Token* identifier = currentToken_;
 	advance();
-	return ParserResult{ Error(), (Node*)new ArgumentNode(datatype, identifier) };
+	return ParserResult{ Error(), (Node*)new ParameterNode(datatype, identifier) };
 }
 
 ParserResult Parser::parseBlock() {
@@ -141,6 +139,22 @@ ParserResult Parser::parseBlock() {
 ParserResult Parser::parseReturn() {
 	advance();
 	return parseAssign();
+}
+
+ParserResult Parser::parseAssign(Token* datatype) {
+	int startPos = pos_;
+	ParserResult leftSide = parseLeftSide();
+	if (leftSide.error.isError() || currentToken_->type() != Token::Type::EQ_ASSIGN) {
+		delete leftSide.node;
+		goBackTo(startPos);
+		return parseLogOr();
+	} else {
+		advance(); // EQ_ASSIGN
+		ParserResult right = parseAssign();
+		if (right.error.isError())
+			return right;
+		return ParserResult{ Error(), (Node*)new VarAssignNode(datatype, leftSide.node, right.node) };
+	}
 }
 
 ParserResult Parser::parseVarDef() {
@@ -208,6 +222,34 @@ ParserResult Parser::parseUnary() {
 	} else {
 		return parseSimple();
 	}
+}
+
+ParserResult Parser::parseLeftSide() {
+	ParserResult left = parseSimple();
+	if (left.error.isError())
+		return left;
+
+	while (currentToken_->type() == Token::Type::LPAREN) {
+		ParserResult right = parseArgList();
+		left = ParserResult{ Error(), (Node*)new FuncCallNode(left.node, right.node) };
+	}
+	return left;
+}
+
+ParserResult Parser::parseArgList() {
+	if (currentToken_->type() != Token::Type::LPAREN)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+
+	ParserResult result;
+	if (currentToken_->type() != Token::Type::RPAREN)
+		result = parseBinary(&Parser::parseAssign, Token::isCommaType);
+
+	if (currentToken_->type() != Token::Type::RPAREN)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+
+	return result;
 }
 
 ParserResult Parser::parseSimple() {

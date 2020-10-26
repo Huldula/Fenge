@@ -133,9 +133,9 @@ CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, I
 }
 
 CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg) {
-	const std::string& name = node->name();
+	//const std::string& name = node->name();
 
-	if (currContext_->findVariableInContext(name)->datatype != Token::Keyword::NO_KEYWORD)
+	if (currContext_->findVariableInContext("")->datatype != Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
 	CBYTE reg0 = targetRegOrNextFree(targetReg);
 	CompilerResult inner = compile(node->right, reg0);
@@ -143,7 +143,7 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 		return inner;
 
 	CADDR addr0 = occupyNextAddr();
-	Variable var = Variable(name, node->datatype(), inner.actualTarget, addr0);
+	Variable var = Variable("", node->datatype(), inner.actualTarget, addr0);
 	currContext_->variables.push_back(var);
 
 	inner.instructions.push_back(
@@ -154,8 +154,8 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 }
 
 CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg) {
-	const std::string& name = node->name();
-	Variable* var = currContext_->findVariable(name);
+	//const std::string& name = node->name();
+	Variable* var = currContext_->findVariable("");
 	if (var->datatype == Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
 	//CBYTE reg0 = var.reg ? var.reg : targetRegOrNextFree(targetReg);
@@ -195,11 +195,11 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 	currContext_ = &context;
 
 	CompilerResult result = CompilerResult();
-	if (node->argList == nullptr) {
-	} else if (node->argList->type() == Node::Type::BINARY) {
-		result = visitArgList((BinaryNode*)node->argList);
-	} else if (node->argList->type() == Node::Type::ARG_NODE) {
-		result = visitArg((ArgumentNode*)node->argList);
+	if (node->paramList == nullptr) {
+	} else if (node->paramList->type() == Node::Type::BINARY) {
+		result = visitParamList((BinaryNode*)node->paramList);
+	} else if (node->paramList->type() == Node::Type::PARAM_NODE) {
+		result = visitParam((ParameterNode*)node->paramList);
 	}
 	if (result.error.isError())
 		return result;
@@ -221,18 +221,18 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 	return CompilerResult();
 }
 
-CompilerResult Compiler::visitArgList(const BinaryNode* node) {
-	if (node->left->type() != Node::Type::ARG_NODE)
+CompilerResult Compiler::visitParamList(const BinaryNode* node) {
+	if (node->left->type() != Node::Type::PARAM_NODE)
 		LOG("komisch");
-	CompilerResult left = node->left->type() == Node::Type::ARG_NODE
-		? visitArg((ArgumentNode*)node->left)
-		: visitArgList((BinaryNode*)node->left);
+	CompilerResult left = node->left->type() == Node::Type::PARAM_NODE
+		? visitParam((ParameterNode*)node->left)
+		: visitParamList((BinaryNode*)node->left);
 	if (left.error.isError())
 		return left;
 
-	CompilerResult right = node->right->type() == Node::Type::ARG_NODE
-		? visitArg((ArgumentNode*)node->right)
-		: visitArgList((BinaryNode*)node->right);
+	CompilerResult right = node->right->type() == Node::Type::PARAM_NODE
+		? visitParam((ParameterNode*)node->right)
+		: visitParamList((BinaryNode*)node->right);
 	if (right.error.isError())
 		return right;
 
@@ -240,7 +240,7 @@ CompilerResult Compiler::visitArgList(const BinaryNode* node) {
 	return left;
 }
 
-CompilerResult Compiler::visitArg(const ArgumentNode* node) {
+CompilerResult Compiler::visitParam(const ParameterNode* node) {
 	const std::string& name = node->name();
 	CADDR addr0 = occupyNextAddr();
 	Variable var = Variable(name, node->datatype(), nextFreeArgReg(), addr0);

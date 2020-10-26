@@ -27,8 +27,8 @@ public:
 	ParserResult parseStatementList();
 	ParserResult parseStatement();
 	ParserResult parseFuncDef();
-	ParserResult parseArgList();
-	ParserResult parseArg();
+	ParserResult parseParamList();
+	ParserResult parseParam();
 	ParserResult parseBlock();
 	ParserResult parseReturn();
 	ParserResult parseVarDef();
@@ -45,6 +45,8 @@ public:
 	ParserResult parseMathAdd();
 	ParserResult parseMathMul();
 	ParserResult parseUnary();
+	ParserResult parseLeftSide();
+	ParserResult parseArgList();
 	ParserResult parseSimple();
 	//ParserResult* parseBinary(ParserResult* (Parser::* func)());
 
@@ -52,6 +54,7 @@ public:
 private:
 	int pos_;
 	Token* advance();
+	Token* goBackTo(int pos);
 	Token* peek(unsigned int count);
 	Token* peek();
 	Token* currentToken_;
