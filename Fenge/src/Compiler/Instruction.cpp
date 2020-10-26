@@ -1,5 +1,7 @@
 #include "fgpch.h"
 
+#include "Core/Macros.h"
+#include "Core/Log.h"
 #include "Instruction.h"
 
 namespace fenge {
@@ -34,6 +36,14 @@ bool Instruction::hasFunction() const {
 	const Opcode opcode = getOpcode();
 	return !(opcode == Opcode::LI || opcode == Opcode::JMP || opcode == Opcode::CALL
 		|| opcode == Opcode::LD || opcode == Opcode::ST || opcode == Opcode::RET);
+}
+
+void Instruction::setCallAddr(CADDR addr) {
+	if (getOpcode() != Opcode::CALL) {
+		LOG("Called Instruction::setCallAddr() on non CALL Instruction");
+	}
+	value_ = value_ & 0x000FF;
+	value_ += (addr & 0xFF00) + ((addr & 0xFF) << 16);
 }
 
 int Instruction::value() const {

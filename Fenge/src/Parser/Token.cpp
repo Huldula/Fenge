@@ -67,8 +67,8 @@ bool Token::isSemicolonType(Type type) {
 	return type == Type::SEMICOLON;
 }
 
-bool Token::isColonType(Type type) {
-	return type == Type::COLON;
+bool Token::isCommaType(Type type) {
+	return type == Type::COMMA;
 }
 
 bool Token::isLogOrType(Type type) {

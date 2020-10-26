@@ -7,14 +7,20 @@ namespace fenge {
 
 
 Compiler::Compiler() {
-	for (size_t reg = 0; reg <= 0xF; reg++) {
-		registers_[reg] = Register();
-	}
 	globalContext_ = Context();
 	currContext_ = &globalContext_;
 }
 
 
+CompilerResult Compiler::compile(const Node* node) {
+	auto res = compile(node, Register::RET);
+	for (const Function func : functions) {
+		res.instructions.push_back(InstructionFactory::NOP());
+		res.instructions.push_back(InstructionFactory::NOP());
+		res.instructions.insert(res.instructions.end(), func.instructions.begin(), func.instructions.end());
+	}
+	return res;
+}
 
 CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 	if (node == nullptr)
@@ -70,7 +76,7 @@ CompilerResult Compiler::compileBool(const Node* node, CBYTE targetReg) {
 
 CompilerResult Compiler::visitBinaryExprConvert(
 	const BinaryNode* node,
-	CBYTE targetReg,
+	BYTE targetReg,
 	Instruction::Function func,
 	CompilerResult(Compiler::* converter)(const Node*, CBYTE)
 ) {
@@ -102,19 +108,19 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	freeReg(reg1);
 
 	// free after compiling second, so second does not override
-	if (!isGPReg(targetReg))
-		freeReg(reg0);
+	//if (!isGPReg(targetReg))
+		//freeReg(reg0);
 
 	firstResult.instructions.insert(firstResult.instructions.end(),
 		secondResult.instructions.begin(), secondResult.instructions.end());
 	if (leftFirst)
 		firstResult.instructions.push_back(
-			InstructionFactory::REG(func, targetReg, firstResult.actualTarget, secondResult.actualTarget));
+			InstructionFactory::REG(func, reg0, firstResult.actualTarget, secondResult.actualTarget));
 	else
 		firstResult.instructions.push_back(
-			InstructionFactory::REG(func, targetReg, secondResult.actualTarget, firstResult.actualTarget));
+			InstructionFactory::REG(func, reg0, secondResult.actualTarget, firstResult.actualTarget));
 
-	firstResult.actualTarget = targetReg;
+	firstResult.actualTarget = reg0;
 	return firstResult;
 }
 
@@ -129,7 +135,7 @@ CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, I
 CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg) {
 	const std::string& name = node->name();
 
-	if (currContext_->findVariableInContext(name).datatype != Token::Keyword::NO_KEYWORD)
+	if (currContext_->findVariableInContext(name)->datatype != Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
 	CBYTE reg0 = targetRegOrNextFree(targetReg);
 	CompilerResult inner = compile(node->right, reg0);
@@ -149,18 +155,18 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 
 CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg) {
 	const std::string& name = node->name();
-	Variable var = currContext_->findVariable(name);
-	if (var.datatype == Token::Keyword::NO_KEYWORD)
+	Variable* var = currContext_->findVariable(name);
+	if (var->datatype == Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
-	CBYTE reg0 = var.reg ? var.reg : targetRegOrNextFree(targetReg);
+	//CBYTE reg0 = var.reg ? var.reg : targetRegOrNextFree(targetReg);
 
-	CompilerResult inner = compile(node->right, reg0);
+	CompilerResult inner = compile(node->right, Register::ZERO);
 	if (inner.error.isError())
 		return inner;
 	//Instruction::insertIfValid(inner.instructions, movVar(inner.actualTarget, &var));
-	setRegVar(inner.actualTarget, &var);
+	setRegVar(inner.actualTarget, var);
 	inner.instructions.push_back(
-		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
+		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
 	);
 	return inner;
 }
@@ -184,27 +190,49 @@ CompilerResult Compiler::visitStatementList(const BinaryNode* node, CBYTE target
 CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) {
 	Token* returnType = node->dt;
 	Token* identifier = node->id;
-	if (node->argList == nullptr)
-		return CompilerResult(Error());
-	else if (node->argList->type() == Node::Type::BINARY)
-		return visitArgList((BinaryNode*)node->argList, targetReg);
-	else if (node->argList->type() == Node::Type::ARG_NODE)
-		return visitArg((ArgumentNode*)node->argList, targetReg);
-	return CompilerResult(Error());
+
+	Context context = Context(currContext_);
+	currContext_ = &context;
+
+	CompilerResult result = CompilerResult();
+	if (node->argList == nullptr) {
+	} else if (node->argList->type() == Node::Type::BINARY) {
+		result = visitArgList((BinaryNode*)node->argList);
+	} else if (node->argList->type() == Node::Type::ARG_NODE) {
+		result = visitArg((ArgumentNode*)node->argList);
+	}
+	if (result.error.isError())
+		return result;
+
+	CompilerResult statementRes = compile(node->statement, targetReg);
+	if (statementRes.error.isError())
+		return statementRes;
+	result.instructions.insert(result.instructions.end(), statementRes.instructions.begin(), statementRes.instructions.end());
+
+	LOG("");
+	LOG(result.toString());
+	LOG("");
+
+	functions.push_back(
+		Function(*(std::string*)identifier->value(), *(Token::Keyword*)returnType->value(), context, result.instructions)
+	);
+	currContext_ = context.parent;
+
+	return CompilerResult();
 }
 
-CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
-	LOG((node->left->type() == Node::Type::ARG_NODE ? "gut" : "komisch"));
+CompilerResult Compiler::visitArgList(const BinaryNode* node) {
+	if (node->left->type() != Node::Type::ARG_NODE)
+		LOG("komisch");
 	CompilerResult left = node->left->type() == Node::Type::ARG_NODE
-		? visitArg((ArgumentNode*)node->left, targetReg)
-		: visitArgList((BinaryNode*)node->left, targetReg);
+		? visitArg((ArgumentNode*)node->left)
+		: visitArgList((BinaryNode*)node->left);
 	if (left.error.isError())
 		return left;
 
-	CBYTE secondTargetReg = nextFreeArgReg();
 	CompilerResult right = node->right->type() == Node::Type::ARG_NODE
-		? visitArg((ArgumentNode*)node->right, secondTargetReg)
-		: visitArgList((BinaryNode*)node->right, secondTargetReg);
+		? visitArg((ArgumentNode*)node->right)
+		: visitArgList((BinaryNode*)node->right);
 	if (right.error.isError())
 		return right;
 
@@ -212,20 +240,20 @@ CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
 	return left;
 }
 
-CompilerResult Compiler::visitArg(const ArgumentNode* node, CBYTE targetReg) {
+CompilerResult Compiler::visitArg(const ArgumentNode* node) {
 	const std::string& name = node->name();
 	CADDR addr0 = occupyNextAddr();
-	Variable var = Variable(name, node->datatype(), targetReg, addr0);
+	Variable var = Variable(name, node->datatype(), nextFreeArgReg(), addr0);
 	currContext_->variables.push_back(var);
 
 	auto instructions = std::vector<Instruction>({
 		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
 		});
 	setRegVar(var.reg, &var);
-	return CompilerResult(instructions, targetReg);
+	return CompilerResult(instructions, var.reg);
 }
 
-// optimizer: check if necessary loading to ram or just keep in reg
+// optimizer: check if necessary storing to ram or just keep in reg
 CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg) {
 	if (node->dt) {
 		return visitVarDef(node, targetReg);
@@ -395,14 +423,14 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 
 CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 	if (node->token->type() == Token::Type::IDENTIFIER) {
-		Variable var = currContext_->findVariable(*(std::string*)node->token->value());
-		if (var.datatype == Token::Keyword::NO_KEYWORD)
+		Variable* var = currContext_->findVariable(*(std::string*)node->token->value());
+		if (var->datatype == Token::Keyword::NO_KEYWORD)
 			return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
-		if (var.reg) {
-			return CompilerResult(std::vector<Instruction>(), var.reg);
+		if (var->reg) {
+			return CompilerResult(std::vector<Instruction>(), var->reg);
 		} else {
 			return CompilerResult(std::vector<Instruction>({
-				InstructionFactory::LD(targetReg, Register::ZERO, var.addr)
+				InstructionFactory::LD(targetReg, Register::ZERO, var->addr)
 				}), targetReg);
 		}
 	} else {
@@ -432,9 +460,23 @@ CBYTE Compiler::targetRegOrNextFree(CBYTE targetReg) {
 }
 
 
+Function Compiler::findFunction(const std::string& name) const {
+	for (const Function& var : functions) {
+		if (name.compare(var.name) == 0) {
+			return var;
+		}
+	}
+	return Function::notFound();
+}
+
+
+bool Compiler::isRegFree(CBYTE reg) const {
+	return !currContext_->registers[reg].isOccupied;
+}
+
 CBYTE Compiler::nextFreeGPReg() const {
 	for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
-		if (!registers_[reg].isOccupied)
+		if (isRegFree(reg))
 			return reg;
 	}
 	return 0;
@@ -442,19 +484,19 @@ CBYTE Compiler::nextFreeGPReg() const {
 
 CBYTE Compiler::nextFreeArgReg() const {
 	for (BYTE reg = Register::ARG_MIN; reg <= Register::ARG_MAX; reg++) {
-		if (!registers_[reg].isOccupied)
+		if (isRegFree(reg))
 			return reg;
 	}
 	return 0;
 }
 
 CBYTE Compiler::freeReg(CBYTE reg) {
-	registers_[reg].isOccupied = false;
+	currContext_->registers[reg].isOccupied = false;
 	return reg;
 }
 
 CBYTE Compiler::occupyReg(CBYTE reg) {
-	registers_[reg].isOccupied = true;
+	currContext_->registers[reg].isOccupied = true;
 	return reg;
 }
 
@@ -464,15 +506,16 @@ CADDR Compiler::occupyNextAddr() {
 
 void Compiler::setRegVar(CBYTE reg, Variable* var) {
 	freeReg(var->reg);
+	delRegVar(var->reg);
 	occupyReg(reg);
-	registers_[reg].containedVar = var;
+	currContext_->registers[reg].containedVar = var;
 	var->reg = reg;
 }
 
 Instruction Compiler::movVar(CBYTE reg, Variable* var) {
 	freeReg(var->reg);
 	occupyReg(reg);
-	registers_[reg].containedVar = var;
+	currContext_->registers[reg].containedVar = var;
 	if (var->reg == reg)
 		return Instruction(0);
 	auto out = InstructionFactory::REG(Instruction::Function::MOV, reg, var->reg, var->reg);
@@ -481,7 +524,7 @@ Instruction Compiler::movVar(CBYTE reg, Variable* var) {
 }
 
 void Compiler::delRegVar(CBYTE reg) {
-	registers_[reg].containedVar = nullptr;
+	currContext_->registers[reg].containedVar = nullptr;
 }
 
 

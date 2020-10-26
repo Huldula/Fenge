@@ -117,7 +117,7 @@ ParserResult Parser::parseArgList() {
 	advance();
 	ParserResult result;
 	if (currentToken_->type() != Token::Type::RPAREN)
-		result = parseMaybeBinary(&Parser::parseArg, Token::isColonType, true);
+		result = parseBinary(&Parser::parseArg, Token::isCommaType);
 	advance();
 	return result;
 }

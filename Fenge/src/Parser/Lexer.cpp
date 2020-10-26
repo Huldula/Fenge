@@ -73,7 +73,7 @@ LexerResult Lexer::generateTokens() {
 		} else if (currentChar_ == ';') {
 			pushBackAdvance(result, new Token(Token::Type::SEMICOLON, nullptr));
 		} else if (currentChar_ == ',') {
-			pushBackAdvance(result, new Token(Token::Type::COLON, nullptr));
+			pushBackAdvance(result, new Token(Token::Type::COMMA, nullptr));
 		} else {
 			result.error = Error(ErrorCode::ILLEGAL_CHAR, pos_);
 			return result;

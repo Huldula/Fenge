@@ -21,7 +21,7 @@ public:
 	static bool isLogType(Type type);
 
 	static bool isSemicolonType(Type type);
-	static bool isColonType(Type type);
+	static bool isCommaType(Type type);
 	static bool isLogOrType(Type type);
 	static bool isLogXorType(Type type);
 	static bool isLogAndType(Type type);
@@ -80,7 +80,7 @@ private:
 	T(ROTR, ">>>") \
 	T(EQ_ASSIGN, "=") \
 	T(SEMICOLON, ";") \
-	T(COLON, ",") \
+	T(COMMA, ",") \
 	T(LBRACE, "{") \
 	T(RBRACE, "}") \
 	T(LBRACK, "[") \

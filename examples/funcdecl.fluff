@@ -7,6 +7,5 @@ int test1(int i) {
 	i = 2 + i;
 };
 
-int test2(int i, int j) {
+int test2(int i, int j)
 	i = 2 + j + i;
-};

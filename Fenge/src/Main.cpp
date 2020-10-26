@@ -20,7 +20,7 @@ std::string getComilerOutput(const std::string& input) {
 	LOG(parserResult.toString());
 
 	Compiler compiler = Compiler();
-	CompilerResult compilerResult = compiler.compile(parserResult.node, 0x3);
+	CompilerResult compilerResult = compiler.compile(parserResult.node);
 	LOG(compilerResult.toString());
 
 	delete parserResult.node;
@@ -78,6 +78,7 @@ void fileInput(const std::string& fileName) {
 int main() {
 	//testInstructionFactory();
 	//consoleInput();
+	//fileInput("../examples/funcdecl.fluff");
 	fileInput("../examples/funcdecl.fluff");
 	return 0;
 }

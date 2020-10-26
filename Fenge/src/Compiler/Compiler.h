@@ -4,9 +4,9 @@
 #include "Parser/Nodes.h"
 #include "Instruction.h"
 #include "Variable.h"
-#include "Function.h"
-#include "Context.h"
 #include "Register.h"
+#include "Context.h"
+#include "Function.h"
 
 namespace fenge {
 
@@ -19,6 +19,7 @@ public:
 	CompilerResult(std::vector<Instruction> instructions, CBYTE actualTarget)
 		: instructions(instructions), actualTarget(actualTarget) { };
 	CompilerResult(Error error) : error(error) { };
+	CompilerResult() : error(Error()) { };
 
 	static CompilerResult generateError() {
 		return generateError(ErrorCode::COMPILE_ERROR);
@@ -37,10 +38,11 @@ class Compiler {
 public:
 	Compiler();
 
+	CompilerResult compile(const Node* node);
 	CompilerResult compile(const Node* node, CBYTE targetReg);
 private:
 
-	CompilerResult visitBinaryExprConvert(const BinaryNode* node, CBYTE targetReg,
+	CompilerResult visitBinaryExprConvert(const BinaryNode* node, BYTE targetReg,
 		const Instruction::Function func, CompilerResult (Compiler::* converter)(const Node*, CBYTE));
 	CompilerResult visitBinaryExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
 	CompilerResult visitLogExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
@@ -50,8 +52,8 @@ private:
 
 	CompilerResult visitStatementList(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitFuncDef(const FuncDefNode* node, CBYTE targetReg);
-	CompilerResult visitArgList(const BinaryNode* node, CBYTE targetReg);
-	CompilerResult visitArg(const ArgumentNode* node, CBYTE targetReg);
+	CompilerResult visitArgList(const BinaryNode* node);
+	CompilerResult visitArg(const ArgumentNode* node);
 	//CompilerResult visitReturn(const UnaryNode* node, CBYTE targetReg);
 	CompilerResult visitAssign(const VarAssignNode* node, CBYTE targetReg);
 	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
@@ -71,11 +73,14 @@ private:
 	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const;
 	CBYTE targetRegOrNextFree(CBYTE targetReg);
 
-	Register registers_[16];
 	ADDR addrPointer = 0x0001;
 	Context globalContext_;
 	Context* currContext_;
 
+	std::vector<Function> functions = std::vector<Function>();
+	Function findFunction(const std::string& name) const;
+
+	bool isRegFree(CBYTE reg) const;
 	CBYTE nextFreeGPReg() const;
 	CBYTE nextFreeArgReg() const;
 	CBYTE freeReg(CBYTE reg);

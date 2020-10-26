@@ -180,7 +180,7 @@ public:
 	}
 
 	Type type() const override {
-		return Type::FUNC_DEF;
+		return Type::ARG_NODE;
 	}
 
 	const std::string& name() const {

@@ -25,6 +25,8 @@ public:
 
 	bool hasFunction() const;
 
+	void setCallAddr(CADDR addr);
+
 	int value() const;
 
 	static void insertIfValid(std::vector<Instruction>& instructions, Instruction& ins);
