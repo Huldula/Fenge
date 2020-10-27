@@ -53,7 +53,7 @@ public:
 		return new Instruction(
 			(int)Instruction::Opcode::LD
 			+ (rw << 4)
-			+ ((im >> 8) << 8)
+			+ (((im & 0xF00) >> 8) << 8)
 			+ (rr1 << 12)
 			+ ((im & 0xFF) << 16)
 		);
@@ -62,11 +62,11 @@ public:
 	static Instruction* ST(CBYTE rr1, CBYTE rr2, CSHORT im) {
 		return new Instruction(
 			(int)Instruction::Opcode::ST
-			+ ((im & 0xF) << 4)
-			+ ((im >> 8) << 8)
+			+ ((im & 0x00F) << 4)
+			+ (((im & 0xF00) >> 8) << 8)
 			+ (rr1 << 12)
 			+ (rr2 << 16)
-			+ ((im & 0xF0) << 16) // only 16, because it has 4 0s at the end
+			+ ((im & 0x0F0) << 16) // only 16, because it has 4 0s at the end
 		);
 	}
 

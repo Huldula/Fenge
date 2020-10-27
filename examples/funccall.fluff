@@ -1,9 +1,9 @@
-int test0(int i) {
-	i = 2 + i;
+int test0(int j) {
+	j = 2 + j;
 };
 
 int test1(int i) {
-	i = test0() + i;
+	i = test0(i) + i;
 };
 
 test1();

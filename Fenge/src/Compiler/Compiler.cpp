@@ -1,7 +1,6 @@
 #include "fgpch.h"
 
 #include "Compiler.h"
-#include "InstructionFactory.h"
 #include "Linker.h"
 
 namespace fenge {
@@ -143,14 +142,14 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 	if (inner.error.isError())
 		return inner;
 
-	CADDR addr0 = occupyNextAddr();
-	Variable var = Variable(name, node->datatype(), inner.actualTarget, addr0);
+	CADDR addr0 = memManager.malloc();
+	Variable* var = new Variable(name, node->datatype(), inner.actualTarget, addr0);
 	currContext_->variables.push_back(var);
 
 	inner.instructions.push_back(
-		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
+		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
 	);
-	setRegVar(var.reg, &var);
+	setRegVar(var->reg, var);
 	return inner;
 }
 
@@ -217,10 +216,13 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 	CompilerResult statementRes = compile(node->statement, targetReg);
 	if (statementRes.error.isError())
 		return statementRes;
+
+	std::vector<Instruction*> push = memManager.pushForContext(currContext_);
+	std::vector<Instruction*> pop = memManager.popForContext(currContext_);
+	result.instructions.insert(result.instructions.end(), push.begin(), push.end());
 	result.instructions.insert(result.instructions.end(), statementRes.instructions.begin(), statementRes.instructions.end());
-	result.instructions.push_back(
-		InstructionFactory::RET()
-	);
+	result.instructions.insert(result.instructions.end(), pop.begin(), pop.end());
+	result.instructions.push_back(InstructionFactory::RET());
 
 	Function& olderDef = findFunction(*(std::string*)identifier->value());
 	if (olderDef.exists()) {
@@ -256,15 +258,15 @@ CompilerResult Compiler::visitParamList(const BinaryNode* node) {
 
 CompilerResult Compiler::visitParam(const ParameterNode* node) {
 	const std::string& name = node->name();
-	CADDR addr0 = occupyNextAddr();
-	Variable var = Variable(name, node->datatype(), nextFreeArgReg(), addr0);
+	CADDR addr0 = memManager.malloc();
+	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), addr0);
 	currContext_->variables.push_back(var);
 
 	auto instructions = std::vector<Instruction*>({
-		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
+		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
 		});
-	setRegVar(var.reg, &var);
-	return CompilerResult(instructions, var.reg);
+	setRegVar(var->reg, var);
+	return CompilerResult(instructions, var->reg);
 }
 
 // optimizer: check if necessary storing to ram or just keep in reg
@@ -439,6 +441,7 @@ CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
 	CompilerResult result = CompilerResult();
 	const std::string& name = node->nameOfVar();
 
+	freeReg(Register::RET);
 	if (node->argList == nullptr) {
 	} else if (node->argList->type() == Node::Type::BINARY) {
 		result = visitArgList((BinaryNode*)node->argList, Register::RET);
@@ -468,6 +471,7 @@ CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
 		return left;
 
 	CBYTE reg0 = nextFreeArgReg();
+	freeReg(reg0);
 	CompilerResult right = node->right->type() == Node::Type::ASSIGN
 		? compile(node->right, reg0)
 		: visitArgList((BinaryNode*)node->right, reg0);
@@ -550,21 +554,30 @@ CBYTE Compiler::nextFreeArgReg() const {
 
 CBYTE Compiler::freeReg(CBYTE reg) {
 	currContext_->registers[reg].isOccupied = false;
+	delRegVar(reg);
 	return reg;
+}
+
+CBYTE Compiler::freeParentReg(CBYTE reg) {
+	currContext_->parent->registers[reg].isOccupied = false;
+	currContext_->parent->registers[reg].containedVar = nullptr;
+	return reg;
+}
+
+void Compiler::freeArgs() {
+	for (BYTE reg = Register::ARG_MIN; reg <= Register::ARG_MAX; reg++) {
+		freeReg(reg);
+	}
 }
 
 CBYTE Compiler::occupyReg(CBYTE reg) {
 	currContext_->registers[reg].isOccupied = true;
+	currContext_->registers[reg].isGenerallyUsed = true;
 	return reg;
-}
-
-CADDR Compiler::occupyNextAddr() {
-	return ++addrPointer;
 }
 
 void Compiler::setRegVar(CBYTE reg, Variable* var) {
 	freeReg(var->reg);
-	delRegVar(var->reg);
 	occupyReg(reg);
 	currContext_->registers[reg].containedVar = var;
 	var->reg = reg;
@@ -582,6 +595,9 @@ Instruction* Compiler::movVar(CBYTE reg, Variable* var) {
 }
 
 void Compiler::delRegVar(CBYTE reg) {
+	if (currContext_->registers[reg].containedVar == nullptr)
+		return;
+	currContext_->registers[reg].containedVar->reg = Register::ZERO;
 	currContext_->registers[reg].containedVar = nullptr;
 }
 

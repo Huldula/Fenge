@@ -18,13 +18,13 @@ public:
 	}
 
 	Context* parent = nullptr;
-	std::vector<Variable> variables = std::vector<Variable>();
+	std::vector<Variable*> variables = std::vector<Variable*>();
 	Register registers[16];
 
 	Variable* findVariable(const std::string& name) {
-		for (Variable& var : variables) {
-			if (name.compare(var.name) == 0) {
-				return &var;
+		for (Variable* var : variables) {
+			if (name.compare(var->name) == 0) {
+				return var;
 			}
 		}
 		if (parent == nullptr) {
@@ -34,9 +34,9 @@ public:
 	}
 
 	Variable* findVariableInContext(const std::string& name) {
-		for (Variable& var : variables) {
-			if (name.compare(var.name) == 0) {
-				return &var;
+		for (Variable* var : variables) {
+			if (name.compare(var->name) == 0) {
+				return var;
 			}
 		}
 		return &Variable::notFound();

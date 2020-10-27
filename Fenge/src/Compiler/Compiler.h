@@ -7,6 +7,7 @@
 #include "Register.h"
 #include "Context.h"
 #include "Function.h"
+#include "InstructionFactory.h"
 
 namespace fenge {
 
@@ -33,6 +34,66 @@ public:
 private:
 	CompilerResult(Error error, std::vector<Instruction*> instructions) : error(error), instructions(instructions) { };
 };
+
+
+class MemoryManager{
+public:
+	static CADDR STACK_SIZE = 0x100;
+
+	std::vector<Instruction*> push(CBYTE reg) const {
+		return std::vector<Instruction*>({
+			InstructionFactory::ST(reg, Register::SP, 0x0000),
+			InstructionFactory::LI(Register::ZERO, 0x0001),
+			InstructionFactory::REG(Instruction::Function::ADD, Register::SP, Register::SP, Register::IM)
+			});
+	}
+
+	std::vector<Instruction*> pop(CBYTE reg) const {
+		return std::vector<Instruction*>({
+			InstructionFactory::LD(reg, Register::SP, 0x0000),
+			InstructionFactory::LI(Register::ZERO, 0x0001),
+			InstructionFactory::REG(Instruction::Function::SUB, Register::SP, Register::SP, Register::IM)
+			});
+	}
+
+	std::vector<Instruction*> pushForContext(Context* context) const {
+		auto out = std::vector<Instruction*>();
+		BYTE count = 0;
+		for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
+			if (context->registers[reg].isGenerallyUsed) {
+				count++;
+				out.push_back(InstructionFactory::ST(reg, Register::SP, count));
+			}
+		}
+		if (count > 0) {
+			out.push_back(InstructionFactory::LI(Register::ZERO, count));
+			out.push_back(InstructionFactory::REG(Instruction::Function::ADD, Register::SP, Register::SP, Register::IM));
+		}
+		return out;
+	}
+
+	std::vector<Instruction*> popForContext(Context* context) const {
+		auto out = std::vector<Instruction*>();
+		BYTE count = 0;
+		for (BYTE reg = Register::GP_MAX; reg >= Register::GP_MIN; reg--) {
+			if (context->registers[reg].isGenerallyUsed) {
+				out.push_back(InstructionFactory::LD(reg, Register::SP, -count));
+				count++;
+			}
+		}
+		if (count > 0) {
+			out.push_back(InstructionFactory::LI(Register::ZERO, count));
+			out.push_back(InstructionFactory::REG(Instruction::Function::SUB, Register::SP, Register::SP, Register::IM));
+		}
+		return out;
+	}
+
+	ADDR addrPointer = STACK_SIZE;
+	CADDR malloc() {
+		return ++addrPointer;
+	}
+};
+
 
 class Compiler {
 public:
@@ -77,9 +138,10 @@ private:
 	void convertToBoolIfNecessary(std::vector<Instruction*>& instructions, const Node* node, CBYTE targetReg) const;
 	CBYTE targetRegOrNextFree(CBYTE targetReg);
 
-	ADDR addrPointer = 0x0001;
 	Context globalContext_;
 	Context* currContext_;
+
+	MemoryManager memManager = MemoryManager();
 
 	std::vector<Function> functions = std::vector<Function>();
 	Function& findFunction(const std::string& name);
@@ -88,13 +150,13 @@ private:
 	CBYTE nextFreeGPReg() const;
 	CBYTE nextFreeArgReg() const;
 	CBYTE freeReg(CBYTE reg);
+	CBYTE freeParentReg(CBYTE reg);
+	void freeArgs();
 	CBYTE occupyReg(CBYTE reg);
 	void setRegVar(CBYTE reg, Variable* var);
 	Instruction* movVar(CBYTE reg, Variable* var);
 	void delRegVar(CBYTE reg);
 	bool isGPReg(CBYTE reg) const { return reg >= Register::GP_MIN && reg <= Register::GP_MAX; };
-
-	CADDR occupyNextAddr();
 };
 
 }
