@@ -10,6 +10,8 @@ struct LexerResult {
 	LexerResult();
 	~LexerResult();
 
+	void deleteTokens() const;
+
 	Error error;
 	std::vector<Token*> tokens;
 

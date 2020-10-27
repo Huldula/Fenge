@@ -26,6 +26,7 @@ public:
 
 	ParserResult parseStatementList();
 	ParserResult parseStatement();
+	ParserResult parseEmpty();
 	ParserResult parseFuncDef();
 	ParserResult parseParamList();
 	ParserResult parseParam();
@@ -45,12 +46,10 @@ public:
 	ParserResult parseMathAdd();
 	ParserResult parseMathMul();
 	ParserResult parseUnary();
-	ParserResult parseLeftSide();
+	ParserResult parseLeftSide(); // also does FuncCall
 	ParserResult parseArgList();
 	ParserResult parseSimple();
-	//ParserResult* parseBinary(ParserResult* (Parser::* func)());
 
-	//ParserResult* parseUnaryExpr();
 private:
 	int pos_;
 	Token* advance();

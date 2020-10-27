@@ -18,6 +18,7 @@ public:
 	};
 
 	Instruction(int value);
+	Instruction(const Instruction& other);
 
 	Opcode getOpcode() const;
 	Function getFunction() const;

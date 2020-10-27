@@ -2,6 +2,7 @@
 
 #include "Compiler.h"
 #include "InstructionFactory.h"
+#include "Linker.h"
 
 namespace fenge {
 
@@ -13,12 +14,8 @@ Compiler::Compiler() {
 
 
 CompilerResult Compiler::compile(const Node* node) {
-	auto res = compile(node, Register::RET);
-	for (const Function func : functions) {
-		res.instructions.push_back(InstructionFactory::NOP());
-		res.instructions.push_back(InstructionFactory::NOP());
-		res.instructions.insert(res.instructions.end(), func.instructions.begin(), func.instructions.end());
-	}
+	CompilerResult res = compile(node, Register::ZERO);
+	Linker::link(res.instructions, functions);
 	return res;
 }
 
@@ -56,13 +53,17 @@ CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 			return CompilerResult::generateError();
 		}
 	case Node::Type::UNARY:
-		return visitUnaryExpr((UnaryNode*)node, targetReg);
+		return visitUnary((UnaryNode*)node, targetReg);
 	case Node::Type::LITERAL:
 		return visitSimple((LiteralNode*)node, targetReg);
-	case Node::Type::VAR_ASSIGN:
-		return visitAssign((VarAssignNode*)node, targetReg);
+	case Node::Type::ASSIGN:
+		return visitDefOrAssign((AssignNode*)node, targetReg);
 	case Node::Type::FUNC_DEF:
 		return visitFuncDef((FuncDefNode*)node, targetReg);
+	case Node::Type::FUNC_CALL:
+		return visitFuncCall((FuncCallNode*)node);
+	case Node::Type::EMPTY:
+		return CompilerResult();
 	}
 	return CompilerResult::generateError();
 }
@@ -85,8 +86,8 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	bool leftFirst = true;
 	// doing literal last requires less registers
 	if (node->right->type() == Node::Type::LITERAL
-		|| node->right->type() == Node::Type::VAR_ASSIGN
-		&& ((VarAssignNode*)node->right)->right->type() == Node::Type::LITERAL) {
+		|| node->right->type() == Node::Type::ASSIGN
+		&& ((AssignNode*)node->right)->right->type() == Node::Type::LITERAL) {
 		first = node->left;
 		second = node->right;
 	} else {
@@ -132,10 +133,10 @@ CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, I
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compileBool);
 }
 
-CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg) {
-	//const std::string& name = node->name();
+CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
+	const std::string& name = node->nameOfVar();
 
-	if (currContext_->findVariableInContext("")->datatype != Token::Keyword::NO_KEYWORD)
+	if (currContext_->findVariableInContext(name)->datatype != Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
 	CBYTE reg0 = targetRegOrNextFree(targetReg);
 	CompilerResult inner = compile(node->right, reg0);
@@ -143,7 +144,7 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 		return inner;
 
 	CADDR addr0 = occupyNextAddr();
-	Variable var = Variable("", node->datatype(), inner.actualTarget, addr0);
+	Variable var = Variable(name, node->datatype(), inner.actualTarget, addr0);
 	currContext_->variables.push_back(var);
 
 	inner.instructions.push_back(
@@ -153,9 +154,14 @@ CompilerResult Compiler::visitVarDef(const VarAssignNode* node, CBYTE targetReg)
 	return inner;
 }
 
-CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg) {
-	//const std::string& name = node->name();
-	Variable* var = currContext_->findVariable("");
+CompilerResult Compiler::visitAssign(const AssignNode* node, CBYTE targetReg) {
+	return visitVarAssign(node, targetReg);
+}
+
+CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg) {
+	const std::string& name = node->nameOfVar();
+
+	Variable* var = currContext_->findVariable(name);
 	if (var->datatype == Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
 	//CBYTE reg0 = var.reg ? var.reg : targetRegOrNextFree(targetReg);
@@ -169,6 +175,10 @@ CompilerResult Compiler::visitVarAss(const VarAssignNode* node, CBYTE targetReg)
 		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
 	);
 	return inner;
+}
+
+CompilerResult Compiler::visitAddrAssign(const AssignNode* node, CBYTE targetReg) {
+	return CompilerResult();
 }
 
 
@@ -198,7 +208,7 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 	if (node->paramList == nullptr) {
 	} else if (node->paramList->type() == Node::Type::BINARY) {
 		result = visitParamList((BinaryNode*)node->paramList);
-	} else if (node->paramList->type() == Node::Type::PARAM_NODE) {
+	} else if (node->paramList->type() == Node::Type::PARAM) {
 		result = visitParam((ParameterNode*)node->paramList);
 	}
 	if (result.error.isError())
@@ -208,29 +218,33 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 	if (statementRes.error.isError())
 		return statementRes;
 	result.instructions.insert(result.instructions.end(), statementRes.instructions.begin(), statementRes.instructions.end());
-
-	LOG("");
-	LOG(result.toString());
-	LOG("");
-
-	functions.push_back(
-		Function(*(std::string*)identifier->value(), *(Token::Keyword*)returnType->value(), context, result.instructions)
+	result.instructions.push_back(
+		InstructionFactory::RET()
 	);
+
+	Function& olderDef = findFunction(*(std::string*)identifier->value());
+	if (olderDef.exists()) {
+		olderDef.instructions = result.instructions;
+	} else {
+		functions.push_back(
+			Function(*(std::string*)identifier->value(), *(Token::Keyword*)returnType->value(), context, result.instructions)
+		);
+	}
 	currContext_ = context.parent;
 
 	return CompilerResult();
 }
 
 CompilerResult Compiler::visitParamList(const BinaryNode* node) {
-	if (node->left->type() != Node::Type::PARAM_NODE)
+	if (node->left->type() != Node::Type::PARAM)
 		LOG("komisch");
-	CompilerResult left = node->left->type() == Node::Type::PARAM_NODE
+	CompilerResult left = node->left->type() == Node::Type::PARAM
 		? visitParam((ParameterNode*)node->left)
 		: visitParamList((BinaryNode*)node->left);
 	if (left.error.isError())
 		return left;
 
-	CompilerResult right = node->right->type() == Node::Type::PARAM_NODE
+	CompilerResult right = node->right->type() == Node::Type::PARAM
 		? visitParam((ParameterNode*)node->right)
 		: visitParamList((BinaryNode*)node->right);
 	if (right.error.isError())
@@ -246,7 +260,7 @@ CompilerResult Compiler::visitParam(const ParameterNode* node) {
 	Variable var = Variable(name, node->datatype(), nextFreeArgReg(), addr0);
 	currContext_->variables.push_back(var);
 
-	auto instructions = std::vector<Instruction>({
+	auto instructions = std::vector<Instruction*>({
 		InstructionFactory::ST(Register::ZERO, var.reg, var.addr)
 		});
 	setRegVar(var.reg, &var);
@@ -254,11 +268,11 @@ CompilerResult Compiler::visitParam(const ParameterNode* node) {
 }
 
 // optimizer: check if necessary storing to ram or just keep in reg
-CompilerResult Compiler::visitAssign(const VarAssignNode* node, CBYTE targetReg) {
+CompilerResult Compiler::visitDefOrAssign(const AssignNode* node, CBYTE targetReg) {
 	if (node->dt) {
 		return visitVarDef(node, targetReg);
 	} else {
-		return visitVarAss(node, targetReg);
+		return visitAssign(node, targetReg);
 	}
 }
 
@@ -392,7 +406,7 @@ CompilerResult Compiler::visitMathMul(const BinaryNode* node, CBYTE targetReg) {
 }
 
 
-CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) {
+CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 	if (node->op->type() == Token::Type::PLUS)
 		return compile(node->node, targetReg);
 
@@ -421,20 +435,64 @@ CompilerResult Compiler::visitUnaryExpr(const UnaryNode* node, CBYTE targetReg) 
 }
 
 
+CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
+	CompilerResult result = CompilerResult();
+	const std::string& name = node->nameOfVar();
+
+	if (node->argList == nullptr) {
+	} else if (node->argList->type() == Node::Type::BINARY) {
+		result = visitArgList((BinaryNode*)node->argList, Register::RET);
+	} else {
+		result = compile(node->argList, Register::RET);
+	}
+	if (result.error.isError())
+		return result;
+
+	result.actualTarget = Register::RET;
+	Instruction* ins = InstructionFactory::CALL(Register::ZERO, 0 /* Linker will set this value after compilation */);
+	result.instructions.push_back(ins);
+	Function& func = findFunction(name);
+	if (!func.exists())
+		return CompilerResult::generateError(ErrorCode::FUNC_NOT_FOUND);
+	func.calledFrom.push_back(ins);
+
+	return result;
+}
+
+
+CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
+	CompilerResult left = node->left->type() == Node::Type::ASSIGN
+		? compile(node->left, targetReg)
+		: visitArgList((BinaryNode*)node->left, targetReg);
+	if (left.error.isError())
+		return left;
+
+	CBYTE reg0 = nextFreeArgReg();
+	CompilerResult right = node->right->type() == Node::Type::ASSIGN
+		? compile(node->right, reg0)
+		: visitArgList((BinaryNode*)node->right, reg0);
+	if (right.error.isError())
+		return right;
+
+	left.instructions.insert(left.instructions.end(), right.instructions.begin(), right.instructions.end());
+	return left;
+}
+
+
 CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 	if (node->token->type() == Token::Type::IDENTIFIER) {
 		Variable* var = currContext_->findVariable(*(std::string*)node->token->value());
 		if (var->datatype == Token::Keyword::NO_KEYWORD)
 			return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
 		if (var->reg) {
-			return CompilerResult(std::vector<Instruction>(), var->reg);
+			return CompilerResult(std::vector<Instruction*>(), var->reg);
 		} else {
-			return CompilerResult(std::vector<Instruction>({
+			return CompilerResult(std::vector<Instruction*>({
 				InstructionFactory::LD(targetReg, Register::ZERO, var->addr)
 				}), targetReg);
 		}
 	} else {
-		return CompilerResult(std::vector<Instruction>({
+		return CompilerResult(std::vector<Instruction*>({
 			InstructionFactory::LI(targetReg, *(int*)node->token->value())
 			}), targetReg);
 	}
@@ -442,7 +500,7 @@ CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 
 
 
-void Compiler::convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const {
+void Compiler::convertToBoolIfNecessary(std::vector<Instruction*>& instructions, const Node* node, CBYTE targetReg) const {
 	bool isBool = false;
 	if (node->type() == Node::Type::BINARY) {
 		if (Token::isLogType(((BinaryNode*)node)->op->type()))
@@ -460,10 +518,10 @@ CBYTE Compiler::targetRegOrNextFree(CBYTE targetReg) {
 }
 
 
-Function Compiler::findFunction(const std::string& name) const {
-	for (const Function& var : functions) {
-		if (name.compare(var.name) == 0) {
-			return var;
+Function& Compiler::findFunction(const std::string& name) {
+	for (Function& func : functions) {
+		if (name.compare(func.name) == 0) {
+			return func;
 		}
 	}
 	return Function::notFound();
@@ -512,12 +570,12 @@ void Compiler::setRegVar(CBYTE reg, Variable* var) {
 	var->reg = reg;
 }
 
-Instruction Compiler::movVar(CBYTE reg, Variable* var) {
+Instruction* Compiler::movVar(CBYTE reg, Variable* var) {
 	freeReg(var->reg);
 	occupyReg(reg);
 	currContext_->registers[reg].containedVar = var;
 	if (var->reg == reg)
-		return Instruction(0);
+		return new Instruction(0);
 	auto out = InstructionFactory::REG(Instruction::Function::MOV, reg, var->reg, var->reg);
 	var->reg = reg;
 	return out;
@@ -535,8 +593,8 @@ std::string CompilerResult::toString() const
 		return ErrorMessageGenerator::fromError(error);
 	} else {
 		std::string out;
-		for (auto instr : instructions) {
-			out += instr.toHexString() + "\n";
+		for (const Instruction* instr : instructions) {
+			out += instr->toHexString() + "\n";
 		}
 		return out;
 	}

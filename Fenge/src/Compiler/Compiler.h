@@ -13,10 +13,10 @@ namespace fenge {
 class CompilerResult {
 public:
 	Error error;
-	std::vector<Instruction> instructions;
+	std::vector<Instruction*> instructions;
 	BYTE actualTarget = Register::ZERO;
 
-	CompilerResult(std::vector<Instruction> instructions, CBYTE actualTarget)
+	CompilerResult(std::vector<Instruction*> instructions, CBYTE actualTarget)
 		: instructions(instructions), actualTarget(actualTarget) { };
 	CompilerResult(Error error) : error(error) { };
 	CompilerResult() : error(Error()) { };
@@ -26,12 +26,12 @@ public:
 	}
 
 	static CompilerResult generateError(ErrorCode errorCode) {
-		return CompilerResult(Error(errorCode), std::vector<Instruction>());
+		return CompilerResult(Error(errorCode), std::vector<Instruction*>());
 	}
 
 	[[nodiscard]] std::string toString() const;
 private:
-	CompilerResult(Error error, std::vector<Instruction> instructions) : error(error), instructions(instructions) { };
+	CompilerResult(Error error, std::vector<Instruction*> instructions) : error(error), instructions(instructions) { };
 };
 
 class Compiler {
@@ -47,15 +47,17 @@ private:
 	CompilerResult visitBinaryExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
 	CompilerResult visitLogExpr(const BinaryNode* node, CBYTE targetReg, const Instruction::Function func);
 	CompilerResult compileBool(const Node* node, CBYTE targetReg);
-	CompilerResult visitVarDef(const VarAssignNode* node, CBYTE targetReg);
-	CompilerResult visitVarAss(const VarAssignNode* node, CBYTE targetReg);
+	CompilerResult visitVarDef(const AssignNode* node, CBYTE targetReg);
+	CompilerResult visitDefOrAssign(const AssignNode* node, CBYTE targetReg);
+	CompilerResult visitVarAssign(const AssignNode* node, CBYTE targetReg);
+	CompilerResult visitAddrAssign(const AssignNode* node, CBYTE targetReg);
 
 	CompilerResult visitStatementList(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitFuncDef(const FuncDefNode* node, CBYTE targetReg);
 	CompilerResult visitParamList(const BinaryNode* node);
 	CompilerResult visitParam(const ParameterNode* node);
 	//CompilerResult visitReturn(const UnaryNode* node, CBYTE targetReg);
-	CompilerResult visitAssign(const VarAssignNode* node, CBYTE targetReg);
+	CompilerResult visitAssign(const AssignNode* node, CBYTE targetReg);
 	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogXor(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogAnd(const BinaryNode* node, CBYTE targetReg);
@@ -67,10 +69,12 @@ private:
 	CompilerResult visitBitShift(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitMathAdd(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitMathMul(const BinaryNode* node, CBYTE targetReg);
-	CompilerResult visitUnaryExpr(const UnaryNode* node, CBYTE targetReg);
+	CompilerResult visitUnary(const UnaryNode* node, CBYTE targetReg);
+	CompilerResult visitFuncCall(const FuncCallNode* node);
+	CompilerResult visitArgList(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitSimple(const LiteralNode* node, CBYTE targetReg);
 
-	void convertToBoolIfNecessary(std::vector<Instruction>& instructions, const Node* node, CBYTE targetReg) const;
+	void convertToBoolIfNecessary(std::vector<Instruction*>& instructions, const Node* node, CBYTE targetReg) const;
 	CBYTE targetRegOrNextFree(CBYTE targetReg);
 
 	ADDR addrPointer = 0x0001;
@@ -78,7 +82,7 @@ private:
 	Context* currContext_;
 
 	std::vector<Function> functions = std::vector<Function>();
-	Function findFunction(const std::string& name) const;
+	Function& findFunction(const std::string& name);
 
 	bool isRegFree(CBYTE reg) const;
 	CBYTE nextFreeGPReg() const;
@@ -86,7 +90,7 @@ private:
 	CBYTE freeReg(CBYTE reg);
 	CBYTE occupyReg(CBYTE reg);
 	void setRegVar(CBYTE reg, Variable* var);
-	Instruction movVar(CBYTE reg, Variable* var);
+	Instruction* movVar(CBYTE reg, Variable* var);
 	void delRegVar(CBYTE reg);
 	bool isGPReg(CBYTE reg) const { return reg >= Register::GP_MIN && reg <= Register::GP_MAX; };
 

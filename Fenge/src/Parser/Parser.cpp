@@ -85,9 +85,15 @@ ParserResult Parser::parseStatement() {
 		return parseReturn();
 	} else if (currentToken_->type() == Token::Type::LBRACE) {
 		return parseBlock();
+	} else if (Token::isSemicolonType(currentToken_->type())) {
+		return parseEmpty();
 	} else {
 		return parseAssign();
 	}
+}
+
+ParserResult Parser::parseEmpty() {
+	return ParserResult{ Error(), (Node*)new EmptyNode() };
 }
 
 ParserResult Parser::parseFuncDef() {
@@ -153,11 +159,13 @@ ParserResult Parser::parseAssign(Token* datatype) {
 		ParserResult right = parseAssign();
 		if (right.error.isError())
 			return right;
-		return ParserResult{ Error(), (Node*)new VarAssignNode(datatype, leftSide.node, right.node) };
+		return ParserResult{ Error(), (Node*)new AssignNode(datatype, leftSide.node, right.node) };
 	}
 }
 
 ParserResult Parser::parseVarDef() {
+	if (currentToken_->type() != Token::Type::KEYWORD)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
 	Token* datatype = currentToken_;
 	advance();
 	return parseAssign(datatype);
@@ -220,7 +228,7 @@ ParserResult Parser::parseUnary() {
 			return inner;
 		return ParserResult{ Error(), (Node*)new UnaryNode(op, inner.node) };
 	} else {
-		return parseSimple();
+		return parseLeftSide();
 	}
 }
 

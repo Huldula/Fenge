@@ -1,0 +1,9 @@
+int test0(int i) {
+	i = 2 + i;
+};
+
+int test1(int i) {
+	i = test0() + i;
+};
+
+test1();

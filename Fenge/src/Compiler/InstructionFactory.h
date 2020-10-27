@@ -7,12 +7,12 @@ namespace fenge {
 class InstructionFactory {
 public:
 
-	static Instruction NOP() {
-		return Instruction((int)Instruction::Opcode::NOP);
+	static Instruction* NOP() {
+		return new Instruction((int)Instruction::Opcode::NOP);
 	}
 
-	static Instruction REG(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE rr2) {
-		return Instruction(
+	static Instruction* REG(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE rr2) {
+		return new Instruction(
 			(int)Instruction::Opcode::REG
 			+ (rw << 4)
 			+ (((CBYTE)func & 0xF) << 8)
@@ -22,24 +22,24 @@ public:
 		);
 	}
 
-	static Instruction LWI(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
+	static Instruction* LWI(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
 		return LWI_UPI(Instruction::Opcode::LWI, func, rw, rr1, im);
 	}
 
-	static Instruction UPI(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
+	static Instruction* UPI(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
 		return LWI_UPI(Instruction::Opcode::UPI, func, rw, rr1, im);
 	}
 
-	static Instruction LI(CBYTE rw, CSHORT im) {
+	static Instruction* LI(CBYTE rw, CSHORT im) {
 		return LI_JMP_CALL(Instruction::Opcode::LI, rw, im);
 	}
 
-	static Instruction JMP(CBYTE rw, CSHORT im) {
+	static Instruction* JMP(CBYTE rw, CSHORT im) {
 		return LI_JMP_CALL(Instruction::Opcode::JMP, rw, im);
 	}
 
-	static Instruction JMPC(const Instruction::Function func, CBYTE rr1, CBYTE rr2, CBYTE im) {
-		return Instruction(
+	static Instruction* JMPC(const Instruction::Function func, CBYTE rr1, CBYTE rr2, CBYTE im) {
+		return new Instruction(
 			(int)Instruction::Opcode::JMPC
 			+ ((im & 0xF) << 4)
 			+ ((CBYTE)func << 8)
@@ -49,8 +49,8 @@ public:
 		);
 	}
 
-	static Instruction LD(CBYTE rw, CBYTE rr1, CSHORT im) {
-		return Instruction(
+	static Instruction* LD(CBYTE rw, CBYTE rr1, CSHORT im) {
+		return new Instruction(
 			(int)Instruction::Opcode::LD
 			+ (rw << 4)
 			+ ((im >> 8) << 8)
@@ -59,8 +59,8 @@ public:
 		);
 	}
 
-	static Instruction ST(CBYTE rr1, CBYTE rr2, CSHORT im) {
-		return Instruction(
+	static Instruction* ST(CBYTE rr1, CBYTE rr2, CSHORT im) {
+		return new Instruction(
 			(int)Instruction::Opcode::ST
 			+ ((im & 0xF) << 4)
 			+ ((im >> 8) << 8)
@@ -70,17 +70,17 @@ public:
 		);
 	}
 
-	static Instruction CALL(CBYTE rw, CSHORT im) {
+	static Instruction* CALL(CBYTE rw, CSHORT im) {
 		return LI_JMP_CALL(Instruction::Opcode::CALL, rw, im);
 	}
 
-	static Instruction RET() {
-		return Instruction((int)Instruction::Opcode::RET);
+	static Instruction* RET() {
+		return new Instruction((int)Instruction::Opcode::RET);
 	}
 
 private:
-	static Instruction LWI_UPI(const Instruction::Opcode op, const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
-		return Instruction(
+	static Instruction* LWI_UPI(const Instruction::Opcode op, const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
+		return new Instruction(
 			(int)op
 			+ (rw << 4)
 			+ ((CBYTE)func << 8)
@@ -89,8 +89,8 @@ private:
 		);
 	}
 
-	static Instruction LI_JMP_CALL(const Instruction::Opcode op, CBYTE rw, CSHORT im) {
-		return Instruction(
+	static Instruction* LI_JMP_CALL(const Instruction::Opcode op, CBYTE rw, CSHORT im) {
+		return new Instruction(
 			(int)op
 			+ (rw << 4)
 			+ ((im >> 8) << 8)

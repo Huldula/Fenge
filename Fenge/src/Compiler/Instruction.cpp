@@ -8,6 +8,10 @@ namespace fenge {
 
 
 Instruction::Instruction(int value) : value_(value) { }
+Instruction::Instruction(const Instruction& other) {
+	value_ = other.value_;
+	LOG("copy");
+}
 
 Instruction::Opcode Instruction::getOpcode() const {
 	return (Opcode)(value_ % 16);

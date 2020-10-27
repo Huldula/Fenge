@@ -216,9 +216,11 @@ Token* Lexer::makeAND() {
 
 
 LexerResult::LexerResult() = default;
-LexerResult::~LexerResult() {
-	//for (const Token* t : tokens)
-		//delete t;
+LexerResult::~LexerResult() = default;
+
+void LexerResult::deleteTokens() const {
+	for (const Token* t : tokens)
+		delete t;
 }
 
 std::string LexerResult::toString() const {

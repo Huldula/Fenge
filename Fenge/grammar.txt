@@ -5,6 +5,9 @@ statement:			block
 					var-def
 					assign
 					return
+					empty
+
+empty:				_
 
 func-def:			datatype IDENTIFIER LPAREN param-list RPAREN statement
 
@@ -17,7 +20,7 @@ return:				RETURN assign?
 var-def:			datatype IDENTIFIER EQUALS assign
 
 assign:				logic-or
-					left-side EQUALS assign ~~~~~~~~~~~~~~~~~
+					left-side EQUALS assign
 
 logic-or:			logic-xor (LOG_OR logic-xor)*
 
@@ -41,18 +44,18 @@ math-add:			math-mul ((PLUS|MINUS) math-mul)*
 
 math-mul:			unary ((MUL|DIV|MOD) unary)*
 
-unary:				left-side ~~~~~~~~~~~~~~~~~~~~~~~~ start
+unary:				left-side
 					(PLUS|MINUS) unary
 					LOG_NOT unary
 					BIT_NOT unary
 
-left-side:			simple ~~~~~~~~~~~~~~~~~~~~
+left-side:			simple
 					// left-side LBRACK assign RBRACK
 					func-call
 
 func-call:			left-side LPAREN arg-list RPAREN
 
-arg-list:			assign* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end
+arg-list:			assign*
 					
 
 simple:				LPAREN assign RPAREN
