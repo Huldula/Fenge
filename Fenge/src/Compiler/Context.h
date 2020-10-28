@@ -41,6 +41,11 @@ public:
 		}
 		return &Variable::notFound();
 	}
+
+	ADDR stackMemPointer = 0;
+	CADDR stackMalloc() {
+		return ++stackMemPointer;
+	}
 };
 
 }

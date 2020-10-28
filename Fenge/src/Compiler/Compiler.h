@@ -137,7 +137,6 @@ private:
 	CompilerResult visitSimple(const LiteralNode* node, CBYTE targetReg);
 
 	void convertToBoolIfNecessary(std::vector<Instruction*>& instructions, const Node* node, CBYTE targetReg) const;
-	CBYTE targetRegOrNextFree(CBYTE targetReg);
 
 	Context globalContext_;
 	Context* currContext_;
@@ -146,6 +145,9 @@ private:
 
 	std::vector<Function> functions = std::vector<Function>();
 	Function& findFunction(const std::string& name);
+
+	CBYTE targetRegOrNextFreeGP(CBYTE targetReg);
+	CBYTE targetRegValid(CBYTE targetReg);
 
 	bool isRegFree(CBYTE reg) const;
 	CBYTE nextFreeGPReg() const;

@@ -98,7 +98,7 @@ CompilerResult Compiler::visitBinaryExprConvert(
 		leftFirst = false;
 	}
 
-	CBYTE reg0 = targetRegOrNextFree(targetReg);
+	CBYTE reg0 = targetRegOrNextFreeGP(targetReg);
 	CompilerResult firstResult = (this->*converter)(first, reg0);
 	if (firstResult.error.isError())
 		return firstResult;
@@ -140,17 +140,17 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 
 	if (currContext_->findVariableInContext(name)->datatype != Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
-	CBYTE reg0 = targetRegOrNextFree(targetReg);
+	CBYTE reg0 = targetRegOrNextFreeGP(targetReg);
 	CompilerResult inner = compile(node->right, reg0);
 	if (inner.error.isError())
 		return inner;
 
-	CADDR addr0 = memManager.malloc();
+	CADDR addr0 = currContext_->stackMalloc();
 	Variable* var = new Variable(name, node->datatype(), inner.actualTarget, addr0);
 	currContext_->variables.push_back(var);
 
 	inner.instructions.push_back(
-		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
+		InstructionFactory::ST(Register::SP, var->reg, var->addr)
 	);
 	setRegVar(var->reg, var);
 	return inner;
@@ -174,7 +174,7 @@ CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg)
 	//Instruction::insertIfValid(inner.instructions, movVar(inner.actualTarget, &var));
 	setRegVar(inner.actualTarget, var);
 	inner.instructions.push_back(
-		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
+		InstructionFactory::ST(Register::SP, var->reg, var->addr)
 	);
 	return inner;
 }
@@ -261,12 +261,12 @@ CompilerResult Compiler::visitParamList(const BinaryNode* node) {
 
 CompilerResult Compiler::visitParam(const ParameterNode* node) {
 	const std::string& name = node->name();
-	CADDR addr0 = memManager.malloc();
+	CADDR addr0 = currContext_->stackMalloc();
 	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), addr0);
 	currContext_->variables.push_back(var);
 
 	auto instructions = std::vector<Instruction*>({
-		InstructionFactory::ST(Register::ZERO, var->reg, var->addr)
+		InstructionFactory::ST(Register::SP, var->reg, var->addr)
 		});
 	setRegVar(var->reg, var);
 	return CompilerResult(instructions, var->reg);
@@ -431,7 +431,7 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 	if (node->op->type() == Token::Type::PLUS)
 		return compile(node->node, targetReg);
 
-	CBYTE reg0 = targetRegOrNextFree(targetReg);
+	CBYTE reg0 = targetRegOrNextFreeGP(targetReg);
 	if (node->op->type() == Token::Type::MINUS) {
 		CompilerResult inner = compile(node->node, reg0);
 		if (inner.error.isError())
@@ -513,13 +513,14 @@ CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 			return CompilerResult(std::vector<Instruction*>(), var->reg);
 		} else {
 			return CompilerResult(std::vector<Instruction*>({
-				InstructionFactory::LD(targetReg, Register::ZERO, var->addr)
+				InstructionFactory::LD(targetReg, Register::SP, var->addr)
 				}), targetReg);
 		}
 	} else {
+		CBYTE actualTarget = targetRegValid(targetReg);
 		return CompilerResult(std::vector<Instruction*>({
-			InstructionFactory::LI(targetReg, *(int*)node->token->value())
-			}), targetReg);
+			InstructionFactory::LI(actualTarget, *(int*)node->token->value())
+			}), actualTarget);
 	}
 }
 
@@ -538,10 +539,6 @@ void Compiler::convertToBoolIfNecessary(std::vector<Instruction*>& instructions,
 		instructions.push_back(InstructionFactory::REG(Instruction::Function::GR, targetReg, targetReg, 0x0));
 }
 
-CBYTE Compiler::targetRegOrNextFree(CBYTE targetReg) {
-	return isGPReg(targetReg) ? targetReg : occupyReg(nextFreeGPReg());
-}
-
 
 Function& Compiler::findFunction(const std::string& name) {
 	for (Function& func : functions) {
@@ -550,6 +547,14 @@ Function& Compiler::findFunction(const std::string& name) {
 		}
 	}
 	return Function::notFound();
+}
+
+CBYTE Compiler::targetRegOrNextFreeGP(CBYTE targetReg) {
+	return isGPReg(targetReg) ? targetReg : occupyReg(nextFreeGPReg());
+}
+
+CBYTE Compiler::targetRegValid(CBYTE targetReg) {
+	return targetReg > Register::IM ? targetReg : occupyReg(nextFreeGPReg());
 }
 
 
