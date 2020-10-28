@@ -33,6 +33,7 @@ public:
 	ParserResult parseBlock();
 	ParserResult parseVarDef();
 	ParserResult parseAssign();
+	ParserResult parseIf();
 	ParserResult parseReturn();
 	ParserResult parseLogOr();
 	ParserResult parseLogXor();

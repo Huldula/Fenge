@@ -62,6 +62,8 @@ CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 		return visitFuncDef((FuncDefNode*)node, targetReg);
 	case Node::Type::FUNC_CALL:
 		return visitFuncCall((FuncCallNode*)node);
+	case Node::Type::IF:
+		return visitIf((IfNode*)node, targetReg);
 	case Node::Type::EMPTY:
 		return CompilerResult();
 	}
@@ -277,6 +279,22 @@ CompilerResult Compiler::visitDefOrAssign(const AssignNode* node, CBYTE targetRe
 	} else {
 		return visitAssign(node, targetReg);
 	}
+}
+
+CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
+	CompilerResult condition = compile(node->condition, targetReg);
+	if (condition.error.isError())
+		return condition;
+	CompilerResult statement = compile(node->statement, targetReg);
+	if (statement.error.isError())
+		return statement;
+	condition.instructions.push_back(InstructionFactory::JMPC(
+			Instruction::Function::EQ,
+			Register::ZERO,
+			condition.actualTarget,
+			statement.instructions.size() + 1));
+	condition.instructions.insert(condition.instructions.end(), statement.instructions.begin(), statement.instructions.end());
+	return condition;
 }
 
 

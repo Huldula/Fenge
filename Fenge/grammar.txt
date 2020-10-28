@@ -3,6 +3,7 @@ statement-list:		assign (SEMICOLON assign)*
 statement:			block
 					func-def
 					var-def
+					if
 					assign
 					return
 					empty
@@ -18,6 +19,8 @@ block:				LBRACE statement-list RBRACE
 return:				RETURN assign?
 
 var-def:			datatype IDENTIFIER EQUALS assign
+
+if:					IF LPAREN assign RPAREN statement
 
 assign:				logic-or
 					left-side EQUALS assign

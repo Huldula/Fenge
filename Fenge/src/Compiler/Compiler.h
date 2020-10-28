@@ -118,8 +118,8 @@ private:
 	CompilerResult visitFuncDef(const FuncDefNode* node, CBYTE targetReg);
 	CompilerResult visitParamList(const BinaryNode* node);
 	CompilerResult visitParam(const ParameterNode* node);
-	//CompilerResult visitReturn(const UnaryNode* node, CBYTE targetReg);
 	CompilerResult visitAssign(const AssignNode* node, CBYTE targetReg);
+	CompilerResult visitIf(const IfNode* node, CBYTE targetReg);
 	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogXor(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogAnd(const BinaryNode* node, CBYTE targetReg);

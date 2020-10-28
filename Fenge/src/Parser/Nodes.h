@@ -18,6 +18,7 @@ public:
 		FUNC_DEF,
 		PARAM,
 		FUNC_CALL,
+		IF,
 		EMPTY
 	};
 
@@ -223,6 +224,27 @@ public:
 
 	Type type() const override {
 		return Type::EMPTY;
+	}
+};
+
+class IfNode : Node {
+public:
+	Node* condition;
+	Node* statement;
+
+	IfNode(Node* leftSide, Node* argList) : condition(leftSide), statement(argList) { }
+
+	~IfNode() {
+		delete condition;
+		delete statement;
+	}
+
+	inline std::string toString() const override {
+		return std::string("( IF (") + condition->toString() + ") {" + statement->toString() + "}" + " )";
+	}
+
+	Type type() const override {
+		return Type::IF;
 	}
 };
 

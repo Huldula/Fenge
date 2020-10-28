@@ -23,7 +23,7 @@ Instruction::Function Instruction::getFunction() const {
 	if (getOpcode() == Opcode::REG) {
 		return (Function)(((value_ & 0xF00) >> 8) + ((value_ & 0xF00000) >> 16));
 	} else {
-		return (Function)(value_ & 0xF00 >> 8);
+		return (Function)((value_ & 0xF00) >> 8);
 	}
 }
 
@@ -137,7 +137,7 @@ std::string Instruction::imToString() const {
 	} else if (opcode == Opcode::LI || opcode == Opcode::JMP || opcode == Opcode::CALL) {
 		return Helper::toHexString(((value_ & 0xFF0000) >> 16) + (value_ & 0x00FF00));
 	} else if (opcode == Opcode::JMPC) {
-		return Helper::toHexString(((value_ & 0xF00000) >> 16) + ((value_ & 0x00FF00) >> 4));
+		return Helper::toHexString(((value_ & 0xF00000) >> 16) + ((value_ & 0x0000F0) >> 4));
 	} else if (opcode == Opcode::LD) {
 		return Helper::toHexString(((value_ & 0xFF0000) >> 16) + (value_ & 0x000F00));
 	} else if (opcode == Opcode::ST) {
