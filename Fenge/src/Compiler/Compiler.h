@@ -31,6 +31,7 @@ public:
 	}
 
 	[[nodiscard]] std::string toString() const;
+	[[nodiscard]] std::string toReadableString() const;
 private:
 	CompilerResult(Error error, std::vector<Instruction*> instructions) : error(error), instructions(instructions) { };
 };
@@ -42,7 +43,7 @@ public:
 
 	std::vector<Instruction*> push(CBYTE reg) const {
 		return std::vector<Instruction*>({
-			InstructionFactory::ST(reg, Register::SP, 0x0000),
+			InstructionFactory::ST(Register::SP, reg, 0x0000),
 			InstructionFactory::LI(Register::ZERO, 0x0001),
 			InstructionFactory::REG(Instruction::Function::ADD, Register::SP, Register::SP, Register::IM)
 			});
@@ -62,7 +63,7 @@ public:
 		for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
 			if (context->registers[reg].isGenerallyUsed) {
 				count++;
-				out.push_back(InstructionFactory::ST(reg, Register::SP, count));
+				out.push_back(InstructionFactory::ST(Register::SP, reg, count));
 			}
 		}
 		if (count > 0) {

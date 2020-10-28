@@ -37,6 +37,14 @@ public:
 	[[nodiscard]] std::string toString() const;
 private:
 	int value_;
+
+	std::string opcodeAndFunctionToString() const;
+	std::string opcodeToString() const;
+	std::string functionToString() const;
+	std::string rwToString() const;
+	std::string rr1ToString() const;
+	std::string rr2ToString() const;
+	std::string imToString() const;
 };
 
 }

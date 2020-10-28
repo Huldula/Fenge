@@ -54,8 +54,11 @@ bool Token::isLiteralType(Type type) {
 	return type == Type::INT || type == Type::FLOAT || type == Type::IDENTIFIER;
 }
 
-bool Token::isUnaryType(Type type) {
-	return type == Type::LOG_NOT || type == Type::BIT_NOT || isAddType(type);
+bool Token::isUnaryType(Token* token) {
+	return token->type() == Type::LOG_NOT
+		|| token->type() == Type::BIT_NOT
+		|| isReturnKeyword(token)
+		|| isAddType(token->type());
 }
 
 bool Token::isLogType(Type type) {

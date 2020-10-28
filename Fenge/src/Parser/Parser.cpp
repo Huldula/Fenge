@@ -141,12 +141,6 @@ ParserResult Parser::parseBlock() {
 	return result;
 }
 
-// TODO
-ParserResult Parser::parseReturn() {
-	advance();
-	return parseAssign();
-}
-
 ParserResult Parser::parseAssign(Token* datatype) {
 	int startPos = pos_;
 	ParserResult leftSide = parseLeftSide();
@@ -173,6 +167,10 @@ ParserResult Parser::parseVarDef() {
 
 ParserResult Parser::parseAssign() {
 	return parseAssign(nullptr);
+}
+
+ParserResult Parser::parseReturn() {
+	return parseUnary();
 }
 
 ParserResult Parser::parseLogOr() {
@@ -220,7 +218,7 @@ ParserResult Parser::parseMathMul() {
 }
 
 ParserResult Parser::parseUnary() {
-	if (Token::isUnaryType(currentToken_->type())) {
+	if (Token::isUnaryType(currentToken_)) {
 		Token* op = currentToken_;
 		advance();
 		ParserResult inner = parseUnary();

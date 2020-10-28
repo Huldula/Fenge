@@ -17,7 +17,7 @@ public:
 	static Keyword keywordType(const std::string_view in);
 
 	static bool isLiteralType(Type type);
-	static bool isUnaryType(Type type);
+	static bool isUnaryType(Token* token);
 	static bool isLogType(Type type);
 
 	static bool isSemicolonType(Type type);

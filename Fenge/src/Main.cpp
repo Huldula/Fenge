@@ -21,7 +21,7 @@ std::string getComilerOutput(const std::string& input) {
 
 	Compiler compiler = Compiler();
 	CompilerResult compilerResult = compiler.compile(parserResult.node);
-	LOG(compilerResult.toString());
+	LOG(compilerResult.toReadableString());
 
 	delete parserResult.node;
 	lexerResult.deleteTokens();

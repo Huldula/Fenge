@@ -14,6 +14,7 @@ Compiler::Compiler() {
 
 CompilerResult Compiler::compile(const Node* node) {
 	CompilerResult res = compile(node, Register::ZERO);
+	res.instructions.push_back(InstructionFactory::HLT());
 	Linker::link(res.instructions, functions);
 	return res;
 }
@@ -431,6 +432,8 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 			targetReg, Register::ZERO, inner.actualTarget));
 		inner.actualTarget = targetReg;
 		return inner;
+	} else if (Token::isReturnKeyword(node->op)) {
+		return compile(node->node, Register::RET);
 	} else {
 		return CompilerResult::generateError();
 	}
@@ -611,6 +614,19 @@ std::string CompilerResult::toString() const
 		std::string out;
 		for (const Instruction* instr : instructions) {
 			out += instr->toHexString() + "\n";
+		}
+		return out;
+	}
+}
+
+std::string CompilerResult::toReadableString() const
+{
+	if (error.isError()) {
+		return ErrorMessageGenerator::fromError(error);
+	} else {
+		std::string out;
+		for (const Instruction* instr : instructions) {
+			out += instr->toString() + "\n";
 		}
 		return out;
 	}

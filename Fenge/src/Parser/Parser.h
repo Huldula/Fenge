@@ -31,9 +31,9 @@ public:
 	ParserResult parseParamList();
 	ParserResult parseParam();
 	ParserResult parseBlock();
-	ParserResult parseReturn();
 	ParserResult parseVarDef();
 	ParserResult parseAssign();
+	ParserResult parseReturn();
 	ParserResult parseLogOr();
 	ParserResult parseLogXor();
 	ParserResult parseLogAnd();

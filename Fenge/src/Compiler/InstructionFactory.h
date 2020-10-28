@@ -78,6 +78,10 @@ public:
 		return new Instruction((int)Instruction::Opcode::RET);
 	}
 
+	static Instruction* HLT() {
+		return new Instruction((int)Instruction::Opcode::HLT);
+	}
+
 private:
 	static Instruction* LWI_UPI(const Instruction::Opcode op, const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE im) {
 		return new Instruction(

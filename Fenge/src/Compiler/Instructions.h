@@ -66,7 +66,7 @@
 	T(TBD1,	0x0E) \
 	T(TBD2,	0x0F) \
 	\
-	T(MOV,	0x01) \
+	T(MOV,	0x10) \
 	T(DSPL,	0x11) \
 	T(ADD,	0x20) \
 	T(SUB,	0x30) \
