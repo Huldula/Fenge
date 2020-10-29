@@ -184,10 +184,21 @@ ParserResult Parser::parseIf() {
 	if (currentToken_->type() != Token::Type::RPAREN)
 		return ParserResult{ Error(ErrorCode::RPAREN_EXPECTED) };
 	advance();
+
 	ParserResult statement = parseStatement();
 	if (statement.error.isError())
 		return statement;
-	return ParserResult{ Error(), (Node*)new IfNode(condition.node, statement.node) };
+
+	Node* elseNode = nullptr;
+	if (Token::isElseKeyword(currentToken_)) {
+		advance();
+		ParserResult statement = parseStatement();
+		if (statement.error.isError())
+			return statement;
+		elseNode = statement.node;
+	}
+
+	return ParserResult{ Error(), (Node*)new IfNode(condition.node, statement.node, elseNode) };
 }
 
 ParserResult Parser::parseReturn() {

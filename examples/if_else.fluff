@@ -1,0 +1,10 @@
+int func() {
+	int i = 2;
+	if (i > 1) {
+		return 1;
+	} else {
+		return 0;
+	};
+};
+
+int j = func();

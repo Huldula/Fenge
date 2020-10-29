@@ -14,6 +14,11 @@ Compiler::Compiler() {
 
 CompilerResult Compiler::compile(const Node* node) {
 	CompilerResult res = compile(node, Register::ZERO);
+	auto start = std::vector<Instruction*>({
+		InstructionFactory::NOP(),
+		InstructionFactory::LI(Register::SP, globalContext_.stackMemPointer)
+		});
+	res.instructions.insert(res.instructions.begin(), start.begin(), start.end());
 	res.instructions.push_back(InstructionFactory::HLT());
 	Linker::link(res.instructions, functions);
 	return res;
@@ -139,13 +144,13 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 
 	if (currContext_->findVariableInContext(name)->datatype != Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
-	CBYTE reg0 = targetRegValid(targetReg);
+	CBYTE reg0 = getTarget(targetReg);
 	CompilerResult inner = compile(node->right, reg0);
 	if (inner.error.isError())
 		return inner;
 
 	CADDR addr0 = currContext_->stackMalloc();
-	Variable* var = new Variable(name, node->datatype(), inner.actualTarget, addr0);
+	Variable* var = new Variable(name, node->datatype(), inner.actualTarget, 0x1000 - addr0);
 	currContext_->variables.push_back(var);
 
 	inner.instructions.push_back(
@@ -221,8 +226,9 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 
 	std::vector<Instruction*> push = memManager.pushForContext(currContext_);
 	std::vector<Instruction*> pop = memManager.popForContext(currContext_);
-	result.instructions.insert(result.instructions.end(), push.begin(), push.end());
+	result.instructions.insert(result.instructions.begin(), push.begin(), push.end());
 	result.instructions.insert(result.instructions.end(), statementRes.instructions.begin(), statementRes.instructions.end());
+	context.endIndex = result.instructions.size();
 	result.instructions.insert(result.instructions.end(), pop.begin(), pop.end());
 	result.instructions.push_back(InstructionFactory::RET());
 
@@ -240,8 +246,6 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 }
 
 CompilerResult Compiler::visitParamList(const BinaryNode* node) {
-	if (node->left->type() != Node::Type::PARAM)
-		LOG("komisch");
 	CompilerResult left = node->left->type() == Node::Type::PARAM
 		? visitParam((ParameterNode*)node->left)
 		: visitParamList((BinaryNode*)node->left);
@@ -261,7 +265,7 @@ CompilerResult Compiler::visitParamList(const BinaryNode* node) {
 CompilerResult Compiler::visitParam(const ParameterNode* node) {
 	const std::string& name = node->name();
 	CADDR addr0 = currContext_->stackMalloc();
-	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), addr0);
+	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), 0x100 - addr0);
 	currContext_->variables.push_back(var);
 
 	auto instructions = std::vector<Instruction*>({
@@ -284,15 +288,32 @@ CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
 	CompilerResult condition = compile(node->condition, targetReg);
 	if (condition.error.isError())
 		return condition;
+
 	CompilerResult statement = compile(node->statement, targetReg);
 	if (statement.error.isError())
 		return statement;
+
 	condition.instructions.push_back(InstructionFactory::JMPC(
 			Instruction::Function::EQ,
 			Register::ZERO,
 			condition.actualTarget,
-			statement.instructions.size() + 1));
-	condition.instructions.insert(condition.instructions.end(), statement.instructions.begin(), statement.instructions.end());
+			(CADDR)statement.instructions.size() + (node->elseBlock == nullptr ? 1 : 2)));
+	condition.instructions.insert(condition.instructions.end(),
+		statement.instructions.begin(), statement.instructions.end());
+
+	if (node->elseBlock != nullptr) {
+		CompilerResult elseBlock = compile(node->elseBlock, targetReg);
+		if (elseBlock.error.isError())
+			return elseBlock;
+		condition.instructions.push_back(InstructionFactory::JMPC(
+			Instruction::Function::EQ,
+			Register::ZERO,
+			Register::ZERO,
+			(CADDR)elseBlock.instructions.size() + 1));
+		condition.instructions.insert(condition.instructions.end(),
+			elseBlock.instructions.begin(), elseBlock.instructions.end());
+	}
+
 	return condition;
 }
 
@@ -431,7 +452,7 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 		return compile(node->node, targetReg);
 
 	if (node->op->type() == Token::Type::MINUS) {
-		CBYTE reg0 = targetRegValid(targetReg);
+		CBYTE reg0 = getTarget(targetReg);
 		CompilerResult inner = compile(node->node, reg0);
 		if (inner.error.isError())
 			return inner;
@@ -440,7 +461,7 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 		inner.actualTarget = targetReg;
 		return inner;
 	} else if (node->op->type() == Token::Type::LOG_NOT || node->op->type() == Token::Type::BIT_NOT) {
-		CBYTE reg0 = targetRegValid(targetReg);
+		CBYTE reg0 = getTarget(targetReg);
 		CompilerResult inner = node->op->type() == Token::Type::LOG_NOT
 			? compileBool(node->node, reg0)
 			: compile(node->node, reg0);
@@ -451,7 +472,13 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 		inner.actualTarget = targetReg;
 		return inner;
 	} else if (Token::isReturnKeyword(node->op)) {
-		return compile(node->node, Register::RET);
+		CompilerResult inner = compile(node->node, Register::RET);
+		if (inner.error.isError())
+			return inner;
+		Instruction* jmp = InstructionFactory::JMP(Register::ZERO, 0x0000);
+		currContext_->returnStatements.push_back(jmp);
+		inner.instructions.push_back(jmp);
+		return inner;
 	} else {
 		return CompilerResult::generateError();
 	}
@@ -464,7 +491,7 @@ CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
 
 	freeReg(Register::RET);
 	if (node->argList == nullptr) {
-	} else if (node->argList->type() == Node::Type::BINARY) {
+	} else if (node->argList->type() == Node::Type::BINARY && ((BinaryNode*)node->argList)->op->type() == Token::Type::COMMA) {
 		result = visitArgList((BinaryNode*)node->argList, Register::RET);
 	} else {
 		result = compile(node->argList, Register::RET);
@@ -557,6 +584,13 @@ CBYTE Compiler::targetRegValid(CBYTE targetReg) {
 	return targetReg > Register::IM ? targetReg : occupyReg(nextFreeGPReg());
 }
 
+CBYTE Compiler::getTarget(CBYTE targetReg) {
+	BYTE reg = targetRegValid(targetReg);
+	if (reg != Register::ZERO)
+		return reg;
+	return freeReg(nextFreeableReg());
+}
+
 
 bool Compiler::isRegFree(CBYTE reg) const {
 	return !currContext_->registers[reg].isOccupied;
@@ -574,6 +608,15 @@ CBYTE Compiler::nextFreeArgReg() const {
 	for (BYTE reg = Register::ARG_MIN; reg <= Register::ARG_MAX; reg++) {
 		if (isRegFree(reg))
 			return reg;
+	}
+	return 0;
+}
+
+CBYTE Compiler::nextFreeableReg() const {
+	for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
+		if (currContext_->registers[reg].containedVar != nullptr) {
+			return reg;
+		}
 	}
 	return 0;
 }
@@ -635,9 +678,8 @@ std::string CompilerResult::toString() const
 		return ErrorMessageGenerator::fromError(error);
 	} else {
 		std::string out;
-		for (const Instruction* instr : instructions) {
+		for (const Instruction* instr : instructions)
 			out += instr->toHexString() + "\n";
-		}
 		return out;
 	}
 }
@@ -648,10 +690,22 @@ std::string CompilerResult::toReadableString() const
 		return ErrorMessageGenerator::fromError(error);
 	} else {
 		std::string out;
-		for (const Instruction* instr : instructions) {
+		for (const Instruction* instr : instructions)
 			out += instr->toString() + "\n";
-		}
 		return out;
 	}
 }
+
+std::string CompilerResult::toOutputString() const
+{
+	if (error.isError()) {
+		return ErrorMessageGenerator::fromError(error);
+	} else {
+		std::string out;
+		for (const Instruction* instr : instructions)
+			out += instr->toOutString();
+		return out;
+	}
+}
+
 }

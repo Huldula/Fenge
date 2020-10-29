@@ -35,6 +35,7 @@ public:
 
 	[[nodiscard]] std::string toHexString() const;
 	[[nodiscard]] std::string toString() const;
+	[[nodiscard]] std::string toOutString() const;
 private:
 	int value_;
 

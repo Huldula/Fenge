@@ -130,6 +130,10 @@ bool Token::isIfKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::IF;
 }
 
+bool Token::isElseKeyword(Token* token) {
+	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::ELSE;
+}
+
 bool Token::isAfterSemicolonType(Type type)
 {
 	return type == Type::EOS || type == Type::RBRACE;

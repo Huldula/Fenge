@@ -20,7 +20,7 @@ return:				RETURN assign?
 
 var-def:			datatype IDENTIFIER EQUALS assign
 
-if:					IF LPAREN assign RPAREN statement
+if:					IF LPAREN assign RPAREN statement (ELSE statement)?
 
 assign:				logic-or
 					left-side EQUALS assign

@@ -231,12 +231,17 @@ class IfNode : Node {
 public:
 	Node* condition;
 	Node* statement;
+	Node* elseBlock = nullptr;
 
-	IfNode(Node* leftSide, Node* argList) : condition(leftSide), statement(argList) { }
+	IfNode(Node* leftSide, Node* argList)
+		: condition(leftSide), statement(argList) { }
+	IfNode(Node* leftSide, Node* argList, Node* elseBlock)
+		: condition(leftSide), statement(argList), elseBlock(elseBlock) { }
 
 	~IfNode() {
 		delete condition;
 		delete statement;
+		delete elseBlock;
 	}
 
 	inline std::string toString() const override {

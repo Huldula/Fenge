@@ -21,6 +21,9 @@ public:
 	std::vector<Variable*> variables = std::vector<Variable*>();
 	Register registers[16];
 
+	size_t endIndex;
+	std::vector<Instruction*> returnStatements = std::vector<Instruction*>();
+
 	Variable* findVariable(const std::string& name) {
 		for (Variable* var : variables) {
 			if (name.compare(var->name) == 0) {

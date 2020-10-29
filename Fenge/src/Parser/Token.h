@@ -37,6 +37,7 @@ public:
 	static bool isDTKeyword(Token* type);
 	static bool isReturnKeyword(Token* type);
 	static bool isIfKeyword(Token* type);
+	static bool isElseKeyword(Token* type);
 	static bool isAfterSemicolonType(Type type);
 
 	const Type type() const; 
@@ -93,7 +94,8 @@ private:
 	T(INT, "int") \
 	T(VOID, "void") \
 	T(RETURN, "return") \
-	T(IF, "if")
+	T(IF, "if") \
+	T(ELSE, "else")
 
 
 enum class Token::Type {

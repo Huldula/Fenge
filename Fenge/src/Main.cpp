@@ -17,10 +17,12 @@ std::string getComilerOutput(const std::string& input) {
 	}
 	Parser parser = Parser(lexerResult.tokens);
 	ParserResult parserResult = parser.parse();
-	LOG(parserResult.toString());
+	if (parserResult.error.isError())
+		LOG(parserResult.toString());
 
 	Compiler compiler = Compiler();
 	CompilerResult compilerResult = compiler.compile(parserResult.node);
+	LOG(compilerResult.toOutputString());
 	LOG(compilerResult.toReadableString());
 
 	delete parserResult.node;
@@ -63,6 +65,6 @@ void fileInput(const std::string& fileName) {
 
 int main() {
 	//consoleInput();
-	fileInput("../examples/if.fluff");
+	fileInput("../examples/if_else.fluff");
 	return 0;
 }

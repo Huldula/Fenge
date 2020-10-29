@@ -40,15 +40,15 @@ Instruction::Function Instruction::getFunctionSafe() const {
 bool Instruction::hasFunction() const {
 	const Opcode opcode = getOpcode();
 	return !(opcode == Opcode::LI || opcode == Opcode::JMP || opcode == Opcode::CALL
-		|| opcode == Opcode::LD || opcode == Opcode::ST || opcode == Opcode::RET || opcode == Opcode::HLT);
+		|| opcode == Opcode::LD || opcode == Opcode::ST || opcode == Opcode::RET
+		|| opcode == Opcode::HLT || opcode == Opcode::NOP);
 }
 
 void Instruction::setCallAddr(CADDR addr) {
-	if (getOpcode() != Opcode::CALL) {
-		LOG("Called Instruction::setCallAddr() on non CALL Instruction");
+	if (getOpcode() == Opcode::CALL || getOpcode() == Opcode::JMP) {
+		value_ = value_ & 0x000FF;
+		value_ += (addr & 0xFF00) + ((addr & 0xFF) << 16);
 	}
-	value_ = value_ & 0x000FF;
-	value_ += (addr & 0xFF00) + ((addr & 0xFF) << 16);
 }
 
 int Instruction::value() const {
@@ -72,6 +72,12 @@ std::string Instruction::toString() const {
 		+ " " + rr1ToString()
 		+ " " + rr2ToString()
 		+ " " + imToString();
+}
+
+std::string Instruction::toOutString() const {
+	return Helper::toHexString(value_ & 0xFF, 2)
+		+ Helper::toHexString((value_ & 0xFF00) >> 8, 2)
+		+ Helper::toHexString((value_ & 0xFF0000) >> 16, 2);
 }
 
 std::string Instruction::opcodeAndFunctionToString() const {
