@@ -98,8 +98,11 @@ CompilerResult Compiler::visitBinaryExprConvert(
 		leftFirst = false;
 	}
 
-	CBYTE reg0 = targetRegOrNextFreeGP(targetReg);
-	CompilerResult firstResult = (this->*converter)(first, reg0);
+	if (func == Instruction::Function::GR) {
+		LOG("");
+	}
+
+	CompilerResult firstResult = (this->*converter)(first, targetReg);
 	if (firstResult.error.isError())
 		return firstResult;
 
@@ -118,12 +121,12 @@ CompilerResult Compiler::visitBinaryExprConvert(
 		secondResult.instructions.begin(), secondResult.instructions.end());
 	if (leftFirst)
 		firstResult.instructions.push_back(
-			InstructionFactory::REG(func, reg0, firstResult.actualTarget, secondResult.actualTarget));
+			InstructionFactory::REG(func, firstResult.actualTarget, firstResult.actualTarget, secondResult.actualTarget));
 	else
 		firstResult.instructions.push_back(
-			InstructionFactory::REG(func, reg0, secondResult.actualTarget, firstResult.actualTarget));
+			InstructionFactory::REG(func, firstResult.actualTarget, secondResult.actualTarget, firstResult.actualTarget));
 
-	firstResult.actualTarget = reg0;
+	firstResult.actualTarget = firstResult.actualTarget;
 	return firstResult;
 }
 
@@ -140,7 +143,7 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 
 	if (currContext_->findVariableInContext(name)->datatype != Token::Keyword::NO_KEYWORD)
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
-	CBYTE reg0 = targetRegOrNextFreeGP(targetReg);
+	CBYTE reg0 = targetRegValid(targetReg);
 	CompilerResult inner = compile(node->right, reg0);
 	if (inner.error.isError())
 		return inner;
@@ -431,8 +434,8 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 	if (node->op->type() == Token::Type::PLUS)
 		return compile(node->node, targetReg);
 
-	CBYTE reg0 = targetRegOrNextFreeGP(targetReg);
 	if (node->op->type() == Token::Type::MINUS) {
+		CBYTE reg0 = targetRegValid(targetReg);
 		CompilerResult inner = compile(node->node, reg0);
 		if (inner.error.isError())
 			return inner;
@@ -441,6 +444,7 @@ CompilerResult Compiler::visitUnary(const UnaryNode* node, CBYTE targetReg) {
 		inner.actualTarget = targetReg;
 		return inner;
 	} else if (node->op->type() == Token::Type::LOG_NOT || node->op->type() == Token::Type::BIT_NOT) {
+		CBYTE reg0 = targetRegValid(targetReg);
 		CompilerResult inner = node->op->type() == Token::Type::LOG_NOT
 			? compileBool(node->node, reg0)
 			: compile(node->node, reg0);
@@ -564,8 +568,11 @@ bool Compiler::isRegFree(CBYTE reg) const {
 
 CBYTE Compiler::nextFreeGPReg() const {
 	for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
-		if (isRegFree(reg))
+		if (isRegFree(reg)) {
+			if (reg == 0xa)
+				LOG("");
 			return reg;
+		}
 	}
 	return 0;
 }
