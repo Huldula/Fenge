@@ -98,10 +98,6 @@ CompilerResult Compiler::visitBinaryExprConvert(
 		leftFirst = false;
 	}
 
-	if (func == Instruction::Function::GR) {
-		LOG("");
-	}
-
 	CompilerResult firstResult = (this->*converter)(first, targetReg);
 	if (firstResult.error.isError())
 		return firstResult;
@@ -568,11 +564,8 @@ bool Compiler::isRegFree(CBYTE reg) const {
 
 CBYTE Compiler::nextFreeGPReg() const {
 	for (BYTE reg = Register::GP_MIN; reg <= Register::GP_MAX; reg++) {
-		if (isRegFree(reg)) {
-			if (reg == 0xa)
-				LOG("");
+		if (isRegFree(reg)) 
 			return reg;
-		}
 	}
 	return 0;
 }
