@@ -3,8 +3,8 @@ statement-list:		assign (SEMICOLON assign)*
 statement:			block
 					func-def
 					var-def
-					if
 					assign
+					if
 					return
 					empty
 

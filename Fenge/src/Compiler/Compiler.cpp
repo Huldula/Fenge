@@ -7,8 +7,8 @@ namespace fenge {
 
 
 Compiler::Compiler() {
-	globalContext_ = Context();
-	currContext_ = &globalContext_;
+	globalContext_ = new Context();
+	currContext_ = globalContext_;
 }
 
 
@@ -16,7 +16,7 @@ CompilerResult Compiler::compile(const Node* node) {
 	CompilerResult res = compile(node, Register::ZERO);
 	auto start = std::vector<Instruction*>({
 		InstructionFactory::NOP(),
-		InstructionFactory::LI(Register::SP, globalContext_.stackMemPointer)
+		InstructionFactory::LI(Register::SP, globalContext_->stackMemPointer)
 		});
 	res.instructions.insert(res.instructions.begin(), start.begin(), start.end());
 	res.instructions.push_back(InstructionFactory::HLT());
@@ -108,7 +108,7 @@ CompilerResult Compiler::visitBinaryExprConvert(
 		return firstResult;
 
 	// occupy targetReg for inner nodes
-	BYTE reg1 = occupyReg(nextFreeGPReg());
+	BYTE reg1 = getTarget(Register::ZERO);
 	CompilerResult secondResult = (this->*converter)(second, reg1);
 	if (secondResult.error.isError())
 		return secondResult;
@@ -135,7 +135,7 @@ CompilerResult Compiler::visitBinaryExpr(const BinaryNode* node, CBYTE targetReg
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compile);
 }
 
-CompilerResult Compiler::visitLogExpr(const BinaryNode* node, CBYTE targetReg, Instruction::Function func) {
+CompilerResult Compiler::visitBinaryLogExpr(const BinaryNode* node, CBYTE targetReg, Instruction::Function func) {
 	return visitBinaryExprConvert(node, targetReg, func, &Compiler::compileBool);
 }
 
@@ -160,10 +160,6 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 	return inner;
 }
 
-CompilerResult Compiler::visitAssign(const AssignNode* node, CBYTE targetReg) {
-	return visitVarAssign(node, targetReg);
-}
-
 CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg) {
 	const std::string& name = node->nameOfVar();
 
@@ -181,10 +177,6 @@ CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg)
 		InstructionFactory::ST(Register::SP, var->reg, var->addr)
 	);
 	return inner;
-}
-
-CompilerResult Compiler::visitAddrAssign(const AssignNode* node, CBYTE targetReg) {
-	return CompilerResult();
 }
 
 
@@ -280,7 +272,7 @@ CompilerResult Compiler::visitDefOrAssign(const AssignNode* node, CBYTE targetRe
 	if (node->dt) {
 		return visitVarDef(node, targetReg);
 	} else {
-		return visitAssign(node, targetReg);
+		return visitVarAssign(node, targetReg);
 	}
 }
 
@@ -319,17 +311,17 @@ CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
 
 
 CompilerResult Compiler::visitLogOr(const BinaryNode* node, CBYTE targetReg) {
-	return visitLogExpr(node, targetReg, Instruction::Function::OR);
+	return visitBinaryLogExpr(node, targetReg, Instruction::Function::OR);
 }
 
 
 CompilerResult Compiler::visitLogXor(const BinaryNode* node, CBYTE targetReg) {
-	return visitLogExpr(node, targetReg, Instruction::Function::XOR);
+	return visitBinaryLogExpr(node, targetReg, Instruction::Function::XOR);
 }
 
 
 CompilerResult Compiler::visitLogAnd(const BinaryNode* node, CBYTE targetReg) {
-	return visitLogExpr(node, targetReg, Instruction::Function::AND);
+	return visitBinaryLogExpr(node, targetReg, Instruction::Function::AND);
 }
 
 
@@ -544,7 +536,7 @@ CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 				}), targetReg);
 		}
 	} else {
-		CBYTE actualTarget = targetRegValid(targetReg);
+		CBYTE actualTarget = getTarget(targetReg);
 		return CompilerResult(std::vector<Instruction*>({
 			InstructionFactory::LI(actualTarget, *(int*)node->token->value())
 			}), actualTarget);
@@ -576,19 +568,19 @@ Function& Compiler::findFunction(const std::string& name) {
 	return Function::notFound();
 }
 
-CBYTE Compiler::targetRegOrNextFreeGP(CBYTE targetReg) {
-	return isGPReg(targetReg) ? targetReg : occupyReg(nextFreeGPReg());
-}
 
-CBYTE Compiler::targetRegValid(CBYTE targetReg) {
-	return targetReg > Register::IM ? targetReg : occupyReg(nextFreeGPReg());
-}
 
 CBYTE Compiler::getTarget(CBYTE targetReg) {
-	BYTE reg = targetRegValid(targetReg);
+	BYTE reg = targetRegValid(targetReg); // 0 if no free reg
 	if (reg != Register::ZERO)
 		return reg;
-	return freeReg(nextFreeableReg());
+	return occupyReg(freeReg(nextFreeableReg()));
+}
+
+// Registers 0x0 to 0x2 (IM) cannot be written to, thus they have to be invalid targets
+// still returns 0 when no Register is free
+CBYTE Compiler::targetRegValid(CBYTE targetReg) {
+	return targetReg > Register::IM ? targetReg : occupyReg(nextFreeGPReg());
 }
 
 
@@ -624,12 +616,6 @@ CBYTE Compiler::nextFreeableReg() const {
 CBYTE Compiler::freeReg(CBYTE reg) {
 	currContext_->registers[reg].isOccupied = false;
 	delRegVar(reg);
-	return reg;
-}
-
-CBYTE Compiler::freeParentReg(CBYTE reg) {
-	currContext_->parent->registers[reg].isOccupied = false;
-	currContext_->parent->registers[reg].containedVar = nullptr;
 	return reg;
 }
 

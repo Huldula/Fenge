@@ -65,6 +65,7 @@ void fileInput(const std::string& fileName) {
 
 int main() {
 	//consoleInput();
-	fileInput("../examples/if_else.fluff");
+	//fileInput("../examples/if_else.fluff");
+	fileInput("../examples/funccall.fluff");
 	return 0;
 }
