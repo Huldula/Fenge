@@ -2,7 +2,7 @@ int test2(int i);
 
 int test1(int i) {
 	int j = i + 1;
-	return test2(j);
+	return test2(j + i);
 };
 
 int test2(int i) {

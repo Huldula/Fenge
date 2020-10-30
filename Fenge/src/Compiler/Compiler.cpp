@@ -126,6 +126,7 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 	Function& olderDef = findFunction(*(std::string*)identifier->value());
 	if (olderDef.exists()) {
 		olderDef.instructions = result.instructions;
+		olderDef.context = context;
 	} else {
 		functions.push_back(
 			Function(identifier->value(), returnType->value(), context, result.instructions)
@@ -178,7 +179,7 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 	if (currContext_->findVariableInContext(name)->exists())
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
 
-	CompilerResult inner = compile(node->right, getTarget(targetReg));
+	CompilerResult inner = compile(node->right, targetReg);
 	RETURN_IF_ERROR(inner);
 
 	CADDR addr0 = currContext_->stackMalloc();
@@ -245,7 +246,6 @@ CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
 	CompilerResult result = CompilerResult();
 	const std::string& name = node->nameOfVar();
 
-	freeReg(Register::RET);
 	if (node->argList == nullptr) {
 	} else if (node->argList->type() == Node::Type::BINARY
 		&& ((BinaryNode*)node->argList)->op->type() == Token::Type::COMMA) {
@@ -413,7 +413,7 @@ CompilerResult Compiler::visitMathMul(const BinaryNode* node, CBYTE targetReg) {
 
 
 CompilerResult Compiler::visitUnaryMinus(const UnaryNode* node, CBYTE targetReg) {
-	CompilerResult inner = compile(node->node, getTarget(targetReg));
+	CompilerResult inner = compile(node->node, targetReg);
 	RETURN_IF_ERROR(inner);
 
 	inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::SUB, targetReg,
@@ -424,10 +424,9 @@ CompilerResult Compiler::visitUnaryMinus(const UnaryNode* node, CBYTE targetReg)
 
 CompilerResult Compiler::visitUnaryNot(const UnaryNode* node, CBYTE targetReg)
 {
-	CBYTE reg0 = getTarget(targetReg);
 	CompilerResult inner = node->op->type() == Token::Type::LOG_NOT
-		? compileBool(node->node, reg0)
-		: compile(node->node, reg0);
+		? compileBool(node->node, targetReg)
+		: compile(node->node, targetReg);
 	RETURN_IF_ERROR(inner);
 
 	inner.instructions.push_back(InstructionFactory::REG(Instruction::Function::NOT,
@@ -456,9 +455,10 @@ CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 		if (var->reg) {
 			return CompilerResult(std::vector<Instruction*>(), var->reg);
 		} else {
+			CBYTE actualTarget = getTarget(targetReg);
 			return CompilerResult(std::vector<Instruction*>({
-				InstructionFactory::LD(targetReg, Register::SP, var->addr)
-				}), targetReg);
+				InstructionFactory::LD(actualTarget, Register::SP, var->addr)
+				}), actualTarget);
 		}
 	} else {
 		CBYTE actualTarget = getTarget(targetReg);
@@ -494,10 +494,8 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	RETURN_IF_ERROR(firstResult);
 
 	// occupy targetReg for inner nodes
-	BYTE reg1 = getTarget(Register::ZERO);
-	CompilerResult secondResult = (this->*converter)(second, reg1);
+	CompilerResult secondResult = (this->*converter)(second, Register::ZERO);
 	RETURN_IF_ERROR(secondResult);
-	freeReg(reg1);
 
 	INSERT_TO_END(firstResult.instructions, secondResult.instructions);
 
