@@ -1,5 +1,5 @@
-int func(int i, int j) {
-	return i+j;
+int func(int i, int j, int k, int l) {
+	return i+j+k+l;
 };
 
 
