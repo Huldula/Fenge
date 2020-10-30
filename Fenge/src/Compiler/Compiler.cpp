@@ -138,7 +138,9 @@ CompilerResult Compiler::visitFuncDef(const FuncDefNode* node, CBYTE targetReg) 
 }
 
 CompilerResult Compiler::visitParamList(const BinaryNode* node) {
-	CompilerResult left = visitParam((ParameterNode*)node->left);
+	CompilerResult left = node->right->type() == Node::Type::PARAM
+		? visitParam((ParameterNode*)node->left)
+		: visitParamList((BinaryNode*)node->left);
 	RETURN_IF_ERROR(left);
 
 	CompilerResult right = node->right->type() == Node::Type::PARAM
@@ -151,7 +153,7 @@ CompilerResult Compiler::visitParamList(const BinaryNode* node) {
 }
 
 CompilerResult Compiler::visitParam(const ParameterNode* node) {
-	const std::string& name = node->name();
+	const std::string& name = ((ParameterNode*)node)->name();
 
 	CADDR addr0 = currContext_->stackMalloc();
 	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), addr0);

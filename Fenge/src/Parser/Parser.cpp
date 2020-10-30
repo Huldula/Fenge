@@ -253,7 +253,7 @@ ParserResult Parser::parseUnary() {
 	if (Token::isUnaryType(currentToken_)) {
 		Token* op = currentToken_;
 		advance();
-		ParserResult inner = parseUnary();
+		ParserResult inner = Token::isReturnKeyword(op) ? parseAssign() : parseUnary();
 		if (inner.error.isError())
 			return inner;
 		return ParserResult{ Error(), (Node*)new UnaryNode(op, inner.node) };

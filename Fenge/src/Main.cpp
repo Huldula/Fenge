@@ -17,7 +17,7 @@ std::string getComilerOutput(const std::string& input) {
 	}
 	Parser parser = Parser(lexerResult.tokens);
 	ParserResult parserResult = parser.parse();
-	if (parserResult.error.isError())
+	//if (parserResult.error.isError())
 		LOG(parserResult.toString());
 
 	Compiler compiler = Compiler();
