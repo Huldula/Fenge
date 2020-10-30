@@ -153,8 +153,7 @@ CompilerResult Compiler::visitParamList(const BinaryNode* node) {
 }
 
 CompilerResult Compiler::visitParam(const ParameterNode* node) {
-	const ParameterNode* node_ = (ParameterNode*)node;
-	const std::string name = ((ParameterNode*)node)->name();
+	const std::string& name = node->name();
 
 	CADDR addr0 = currContext_->stackMalloc();
 	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), addr0);
