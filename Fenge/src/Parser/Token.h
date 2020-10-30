@@ -33,6 +33,7 @@ public:
 	static bool isBitShiftType(Type type);
 	static bool isAddType(Type type);
 	static bool isMulType(Type type);
+	static bool isNotType(Type type);
 
 	static bool isDTKeyword(Token* type);
 	static bool isReturnKeyword(Token* type);

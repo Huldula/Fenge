@@ -9,7 +9,7 @@ public:
 		for (Function& func : functions) {
 			CADDR funcAddr = (CADDR)instructions.size();
 			if (func.calledFrom.size() > 0)
-				instructions.insert(instructions.end(), func.instructions.begin(), func.instructions.end());
+				INSERT_TO_END(instructions, func.instructions);
 			for (Instruction* instr : func.calledFrom) {
 				instr->setCallAddr(funcAddr);
 			}

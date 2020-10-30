@@ -10,6 +10,7 @@ int test2(int i) {
 	return test1(j);
 };
 
+
 int bob = 0;
 bob = test1(1);
 bob = bob + 1;

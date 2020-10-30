@@ -68,7 +68,9 @@ private:
 	CompilerResult visitBitShift(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitMathAdd(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitMathMul(const BinaryNode* node, CBYTE targetReg);
-	CompilerResult visitUnary(const UnaryNode* node, CBYTE targetReg);
+	CompilerResult visitUnaryMinus(const UnaryNode* node, CBYTE targetReg);
+	CompilerResult visitUnaryNot(const UnaryNode* node, CBYTE targetReg);
+	CompilerResult visitUnaryReturn(const UnaryNode* node);
 	CompilerResult visitSimple(const LiteralNode* node, CBYTE targetReg);
 
 	CompilerResult visitBinaryExprConvert(const BinaryNode* node, BYTE targetReg,
@@ -81,20 +83,21 @@ private:
 
 	Function& findFunction(const std::string& name);
 
+	void insertPushPopInstructions(CompilerResult& result, CompilerResult& statementRes);
+
 	CBYTE getTarget(CBYTE targetReg);
 	CBYTE targetRegValid(CBYTE targetReg);
 
-	bool isRegFree(CBYTE reg) const;
 	CBYTE nextFreeGPReg() const;
 	CBYTE nextFreeArgReg() const;
 	CBYTE nextFreeableReg() const;
+	bool isRegFree(CBYTE reg) const;
 	CBYTE freeReg(CBYTE reg);
-	void freeArgs();
 	CBYTE occupyReg(CBYTE reg);
+	void freeArgs();
 	void setRegVar(CBYTE reg, Variable* var);
 	Instruction* movVar(CBYTE reg, Variable* var);
 	void delRegVar(CBYTE reg);
-	bool isGPReg(CBYTE reg) const { return reg >= Register::GP_MIN && reg <= Register::GP_MAX; };
 
 
 	Context* globalContext_;

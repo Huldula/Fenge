@@ -47,7 +47,7 @@ public:
 
 	ADDR stackMemPointer = 0;
 	CADDR stackMalloc() {
-		return ++stackMemPointer;
+		return 0x1000 - (++stackMemPointer);
 	}
 };
 

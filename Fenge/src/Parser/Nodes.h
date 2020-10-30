@@ -13,8 +13,8 @@ public:
 		NODE,
 		LITERAL,
 		UNARY,
-		BINARY,
 		ASSIGN,
+		BINARY,
 		FUNC_DEF,
 		PARAM,
 		FUNC_CALL,
@@ -72,30 +72,6 @@ public:
 	}
 };
 
-
-class BinaryNode : Node {
-public:
-	Node* left;
-	Token* op;
-	Node* right;
-
-	BinaryNode(Node* left, Token* op, Node* right) : left(left), op(op), right(right) { }
-
-	~BinaryNode() {
-		delete left;
-		delete right;
-	}
-
-	inline std::string toString() const override {
-		return std::string("( ") + left->toString()
-			+ (op->type() == Token::Type::SEMICOLON ? "\n" : op->toString())+ right->toString() + " )";
-	}
-
-	Type type() const override {
-		return Type::BINARY;
-	}
-};
-
 class AssignNode : Node {
 public:
 	Token* dt = nullptr;
@@ -124,6 +100,35 @@ public:
 
 	const std::string& nameOfVar() const {
 		return *(std::string*)((LiteralNode*)leftSide)->token->value();
+	}
+};
+
+class BinaryNode : Node {
+public:
+	Node* left;
+	Token* op;
+	Node* right;
+
+	BinaryNode(Node* left, Token* op, Node* right) : left(left), op(op), right(right) { }
+
+	~BinaryNode() {
+		delete left;
+		delete right;
+	}
+
+	inline std::string toString() const override {
+		return std::string("( ") + left->toString()
+			+ (op->type() == Token::Type::SEMICOLON ? "\n" : op->toString())+ right->toString() + " )";
+	}
+
+	Type type() const override {
+		return Type::BINARY;
+	}
+
+	bool rightIsLiteral() const {
+		return right->type() == Node::Type::LITERAL
+			|| right->type() == Node::Type::ASSIGN
+			&& ((AssignNode*)right)->right->type() == Node::Type::LITERAL;
 	}
 };
 

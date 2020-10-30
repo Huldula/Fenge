@@ -19,3 +19,6 @@
 #define IS_DECIMAL_DOT_CHAR(c0) IS_DECIMAL_CHAR(c0) || c0 == '.'
 #define IS_LETTER_CHAR(c0) c0 >= 'a' && c0 <= 'z' || c0 >= 'A' && c0 <= 'Z'
 #define IS_LETTER_DECIMAL_CHAR(c0) IS_LETTER_CHAR(c0) || IS_DECIMAL_CHAR(c0)
+
+#define INSERT_TO_BEGIN(into, other) into.insert(into.begin(), other.begin(), other.end())
+#define INSERT_TO_END(into, other) into.insert(into.end(), other.begin(), other.end())

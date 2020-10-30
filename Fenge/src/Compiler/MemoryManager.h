@@ -52,7 +52,7 @@ public:
 				InstructionFactory::LI(Register::ZERO, count + context->stackMemPointer),
 				InstructionFactory::REG(Instruction::Function::SUB, Register::SP, Register::SP, Register::IM)
 				});
-			out.insert(out.begin(), adder.begin(), adder.end());
+			INSERT_TO_BEGIN(out, adder);
 		}
 		return out;
 	}

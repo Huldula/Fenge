@@ -13,8 +13,12 @@ public:
 	Variable(std::string name, Token::Keyword datatype, CBYTE reg, CADDR addr)
 		: reg(reg), name(name), datatype(datatype), addr(addr) { }
 
-	static Variable notFound() {
+	static Variable& notFound() {
 		return Variable("", Token::Keyword::NO_KEYWORD);
+	}
+
+	bool exists() const {
+		return this != nullptr && datatype != Token::Keyword::NO_KEYWORD;
 	}
 
 	std::string name;

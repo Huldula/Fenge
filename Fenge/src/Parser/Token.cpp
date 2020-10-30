@@ -102,6 +102,10 @@ bool Token::isMulType(Type type) {
 	return type == Type::MUL || type == Type::DIV || type == Type::MOD;
 }
 
+bool Token::isNotType(Type type) {
+	return type == Type::LOG_NOT || type == Type::BIT_NOT;
+}
+
 bool Token::isBitOrType(Type type) {
 	return type == Type::BIT_OR;
 }
