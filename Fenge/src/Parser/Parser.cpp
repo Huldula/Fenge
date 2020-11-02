@@ -87,6 +87,8 @@ ParserResult Parser::parseStatement() {
 		return parseIf();
 	} else if (Token::isWhileKeyword(currentToken_)) {
 		return parseWhile();
+	} else if (Token::isExternKeyword(currentToken_)) {
+		return parseExtern();
 	} else if (currentToken_->type() == Token::Type::LBRACE) {
 		return parseBlock();
 	} else if (Token::isSemicolonType(currentToken_->type())) {
@@ -222,6 +224,26 @@ ParserResult Parser::parseWhile() {
 		return statement;
 
 	return ParserResult{ Error(), (Node*)new WhileNode(condition.node, statement.node) };
+}
+
+ParserResult Parser::parseExtern() {
+	if (!Token::isExternKeyword(currentToken_))
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+	if (currentToken_->type() != Token::Type::LBRACE)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+
+	auto instructions = std::vector<Token*>();
+	while (currentToken_->type() == Token::Type::INT) {
+		instructions.push_back(currentToken_);
+		advance();
+	}
+
+	if (currentToken_->type() != Token::Type::RBRACE)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+	return ParserResult{ Error(), (Node*)new ExternNode(instructions) };
 }
 
 ParserResult Parser::parseReturn() {

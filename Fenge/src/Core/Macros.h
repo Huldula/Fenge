@@ -13,12 +13,13 @@
 	T('\r') \
 	T('\n')
 
-#define IS_WHITESPACE_CHAR(c0) c0 == ' ' || c0 == '\t' || c0 == '\r' || c0 == '\n'
-#define IS_NEW_LINE_CHAR(c0) c0 == '\n'
-#define IS_DECIMAL_CHAR(c0) c0 >= '0' && c0 <= '9'
-#define IS_DECIMAL_DOT_CHAR(c0) IS_DECIMAL_CHAR(c0) || c0 == '.'
-#define IS_LETTER_CHAR(c0) c0 >= 'a' && c0 <= 'z' || c0 >= 'A' && c0 <= 'Z'
-#define IS_LETTER_DECIMAL_CHAR(c0) IS_LETTER_CHAR(c0) || IS_DECIMAL_CHAR(c0)
+#define IS_WHITESPACE_CHAR(c) c == ' ' || c == '\t' || c == '\r' || c == '\n'
+#define IS_NEW_LINE_CHAR(c) c == '\n'
+#define IS_DECIMAL_CHAR(c) c >= '0' && c <= '9'
+#define IS_DECIMAL_DOT_CHAR(c) IS_DECIMAL_CHAR(c) || c == '.'
+#define IS_OCTAL_CHAR(c) c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
+#define IS_LETTER_CHAR(c) c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+#define IS_LETTER_DECIMAL_CHAR(c) IS_LETTER_CHAR(c) || IS_DECIMAL_CHAR(c)
 
 #define INSERT_TO_BEGIN(into, other) into.insert(into.begin(), other.begin(), other.end())
 #define INSERT_TO_END(into, other) into.insert(into.end(), other.begin(), other.end())

@@ -134,12 +134,16 @@ bool Token::isIfKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::IF;
 }
 
+bool Token::isElseKeyword(Token* token) {
+	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::ELSE;
+}
+
 bool Token::isWhileKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::WHILE;
 }
 
-bool Token::isElseKeyword(Token* token) {
-	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::ELSE;
+bool Token::isExternKeyword(Token* token) {
+	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::EXTERN;
 }
 
 bool Token::isAfterSemicolonType(Type type)

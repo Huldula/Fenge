@@ -27,13 +27,15 @@ public:
 	LexerResult generateTokens();
 private:
 	Position pos_;
-	void advance();
+	char advance();
 	char currentChar_;
 	const std::string& input_;
 
 	inline void pushBackAdvance(LexerResult& result, Token* t);
 	inline int currentPos() const;
 	Token* makeNumber();
+	Token* makeDecimal();
+	Token* makeOctal();
 	Token* makeIdentifier();
 	Token* makeEE_EQASSIGN();
 	Token* makeNOT_NE();

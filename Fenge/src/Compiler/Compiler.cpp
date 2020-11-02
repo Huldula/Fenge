@@ -84,6 +84,8 @@ CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 		return visitIf((IfNode*)node, targetReg);
 	case Node::Type::WHILE:
 		return visitWhile((WhileNode*)node, targetReg);
+	case Node::Type::EXTERN:
+		return visitExtern((ExternNode*)node, targetReg);
 	case Node::Type::EMPTY:
 		return CompilerResult();
 	}
@@ -274,6 +276,15 @@ CompilerResult Compiler::visitWhile(const WhileNode* node, CBYTE targetReg) {
 	);
 
 	return condition;
+}
+
+CompilerResult Compiler::visitExtern(const ExternNode* node, CBYTE targetReg) {
+	CompilerResult result = CompilerResult();
+	result.instructions.reserve(node->instructions.size());
+	for (const Token* t : node->instructions) {
+		result.instructions.push_back(new Instruction(*(int*)(t->value())));
+	}
+	return result;
 }
 
 
@@ -495,7 +506,8 @@ CompilerResult Compiler::visitUnaryReturn(const UnaryNode* node) {
 
 CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 	if (node->token->type() == Token::Type::IDENTIFIER) {
-		Variable* var = currContext_->findVariable(*(std::string*)node->token->value());
+		const std::string& name = *(std::string*)node->token->value();
+		Variable* var = currContext_->findVariable(name);
 		if (!var->exists())
 			return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
 

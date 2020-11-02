@@ -15,7 +15,7 @@ Instruction::Instruction(const Instruction& other) {
 }
 
 Instruction::Opcode Instruction::getOpcode() const {
-	return (Opcode)(value_ % 16);
+	return (Opcode)(value_ & 0xF);
 }
 
 // does not check if there is actually a function

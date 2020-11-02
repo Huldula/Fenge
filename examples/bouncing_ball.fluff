@@ -1,0 +1,21 @@
+int display(int col, int line) {
+	extern {
+		0x134101
+	};
+};
+
+int ballX = 8;
+int ballY = 5;
+int velX = 1;
+int velY = 1;
+
+while(1) {
+	if (ballX < 1)
+		velX = -velX;
+	if (ballY > 15)
+		velY = -velY;
+	ballX = ballX >> velX;
+	ballY = ballY + velY;
+
+	display(ballY, ballX);
+};

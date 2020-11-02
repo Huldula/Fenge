@@ -11,9 +11,9 @@ Lexer::Lexer(const std::string& input) : input_(input) {
 
 Lexer::~Lexer() = default;
 
-void Lexer::advance() {
+char Lexer::advance() {
 	pos_.advance(currentChar_);
-	currentChar_ = input_[currentPos()];
+	return currentChar_ = input_[currentPos()];
 }
 
 inline void Lexer::pushBackAdvance(LexerResult& result, Token* t) {
@@ -91,6 +91,15 @@ LexerResult Lexer::generateTokens() {
 }
 
 Token* Lexer::makeNumber() {
+	if (currentChar_ == '0' && advance() == 'x') {
+		advance();
+		return makeOctal();
+	} else {
+		return makeDecimal();
+	}
+}
+
+Token* Lexer::makeDecimal() {
 	int intValue = 0;
 	while (IS_DECIMAL_CHAR(currentChar_)) {
 		intValue = intValue * 10 + (currentChar_ - '0');
@@ -111,6 +120,18 @@ Token* Lexer::makeNumber() {
 	} else {
 		return new Token(Token::Type::INT, new int(intValue));
 	}
+}
+
+Token* Lexer::makeOctal() {
+	int intValue = 0;
+	while (IS_OCTAL_CHAR(currentChar_)) {
+		intValue = intValue * 16
+			+ ((IS_DECIMAL_CHAR(currentChar_))
+			? (currentChar_ - '0')
+			: (std::tolower(currentChar_) - 'a' + 10));
+		advance();
+	}
+	return new Token(Token::Type::INT, new int(intValue));
 }
 
 Token* Lexer::makeIdentifier() {

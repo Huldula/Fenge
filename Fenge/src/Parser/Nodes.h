@@ -20,6 +20,7 @@ public:
 		FUNC_CALL,
 		IF,
 		WHILE,
+		EXTERN,
 		EMPTY
 	};
 
@@ -276,6 +277,23 @@ public:
 
 	Type type() const override {
 		return Type::WHILE;
+	}
+};
+
+class ExternNode : Node {
+public:
+	std::vector<Token*> instructions;
+
+	ExternNode(std::vector<Token*> instructions) : instructions(instructions) { }
+
+	~ExternNode() { }
+
+	inline std::string toString() const override {
+		return "EXTERN";
+	}
+
+	Type type() const override {
+		return Type::EXTERN;
 	}
 };
 

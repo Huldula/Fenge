@@ -7,6 +7,7 @@ statement:			block
 					if
 					while
 					return
+					extern
 					empty
 
 empty:				_
@@ -24,6 +25,8 @@ var-def:			datatype IDENTIFIER EQUALS assign
 if:					IF LPAREN assign RPAREN statement (ELSE statement)?
 
 while:				WHILE LPAREN assign RPAREN statement
+
+extern:				EXTERN LBRACE INT* RBRACE
 
 assign:				logic-or
 					left-side EQUALS assign

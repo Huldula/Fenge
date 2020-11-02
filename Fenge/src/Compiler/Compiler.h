@@ -56,6 +56,7 @@ private:
 	CompilerResult visitVarAssign(const AssignNode* node, CBYTE targetReg);
 	CompilerResult visitIf(const IfNode* node, CBYTE targetReg);
 	CompilerResult visitWhile(const WhileNode* node, CBYTE targetReg);
+	CompilerResult visitExtern(const ExternNode* node, CBYTE targetReg);
 	CompilerResult visitFuncCall(const FuncCallNode* node);
 	CompilerResult visitArgList(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitArg(const Node* node, CBYTE targetReg);

@@ -35,6 +35,7 @@ public:
 	ParserResult parseAssign();
 	ParserResult parseIf();
 	ParserResult parseWhile();
+	ParserResult parseExtern();
 	ParserResult parseReturn();
 	ParserResult parseLogOr();
 	ParserResult parseLogXor();

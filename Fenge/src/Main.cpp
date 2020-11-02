@@ -65,6 +65,6 @@ void fileInput(const std::string& fileName) {
 
 int main() {
 	//consoleInput();
-	fileInput("../examples/funccall.fluff");
+	fileInput("../examples/bouncing_ball.fluff");
 	return 0;
 }
