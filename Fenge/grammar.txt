@@ -5,6 +5,7 @@ statement:			block
 					var-def
 					assign
 					if
+					while
 					return
 					empty
 
@@ -21,6 +22,8 @@ return:				RETURN assign?
 var-def:			datatype IDENTIFIER EQUALS assign
 
 if:					IF LPAREN assign RPAREN statement (ELSE statement)?
+
+while:				WHILE LPAREN assign RPAREN statement
 
 assign:				logic-or
 					left-side EQUALS assign

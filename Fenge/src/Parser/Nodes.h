@@ -19,6 +19,7 @@ public:
 		PARAM,
 		FUNC_CALL,
 		IF,
+		WHILE,
 		EMPTY
 	};
 
@@ -123,12 +124,6 @@ public:
 
 	Type type() const override {
 		return Type::BINARY;
-	}
-
-	bool rightIsLiteral() const {
-		return right->type() == Node::Type::LITERAL
-			|| right->type() == Node::Type::ASSIGN
-			&& ((AssignNode*)right)->right->type() == Node::Type::LITERAL;
 	}
 
 	bool isArgList() const {
@@ -260,6 +255,66 @@ public:
 
 	Type type() const override {
 		return Type::IF;
+	}
+};
+
+class WhileNode : Node {
+public:
+	Node* condition;
+	Node* statement;
+
+	WhileNode(Node* leftSide, Node* argList) : condition(leftSide), statement(argList) { }
+
+	~WhileNode() {
+		delete condition;
+		delete statement;
+	}
+
+	inline std::string toString() const override {
+		return std::string("( WHILE (") + condition->toString() + ") {" + statement->toString() + "}" + " )";
+	}
+
+	Type type() const override {
+		return Type::WHILE;
+	}
+};
+
+
+
+
+
+class Nodes {
+public:
+
+	static bool isLiteral(const Node* node){
+		return node->type() == Node::Type::LITERAL
+			|| node->type() == Node::Type::ASSIGN
+			&& ((AssignNode*)node)->right->type() == Node::Type::LITERAL;
+	}
+
+	// for binary expressions
+	static int rankNode(const Node* node) {
+		if (node->type() == Node::Type::LITERAL
+			&& ((LiteralNode*)node)->token->type() == Token::Type::IDENTIFIER
+			|| node->type() == Node::Type::ASSIGN
+			&& ((AssignNode*)node)->right->type() == Node::Type::LITERAL) {
+			return 3; // Variable
+		} else if (node->type() == Node::Type::LITERAL) {
+			return 1; // int literal
+		} else {
+			return 2; // anything else
+		}
+	}
+
+	static CBYTE getTargetFromNodeType(const Node* left, const Node* right, CBYTE firstRes, CBYTE secondRes, bool leftFirst) {
+		leftFirst = leftFirst
+			? (Nodes::rankNode(left) < Nodes::rankNode(right))
+			: (Nodes::rankNode(right) < Nodes::rankNode(left));
+		if (leftFirst) {
+			return firstRes;
+		} else {
+			return secondRes;
+		}
 	}
 };
 

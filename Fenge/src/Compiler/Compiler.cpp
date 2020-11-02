@@ -14,7 +14,7 @@ Compiler::Compiler() {
 
 
 CompilerResult Compiler::compile(const Node* node) {
-	CompilerResult res = compile(node, Register::ZERO);
+	CompilerResult res = compile(node, Register::CHOOSE);
 	auto start = std::vector<Instruction*>({
 		InstructionFactory::NOP(),
 		InstructionFactory::LI(Register::SP, globalContext_->stackMemPointer)
@@ -82,6 +82,8 @@ CompilerResult Compiler::compile(const Node* node, CBYTE targetReg) {
 		return visitFuncCall((FuncCallNode*)node);
 	case Node::Type::IF:
 		return visitIf((IfNode*)node, targetReg);
+	case Node::Type::WHILE:
+		return visitWhile((WhileNode*)node, targetReg);
 	case Node::Type::EMPTY:
 		return CompilerResult();
 	}
@@ -202,7 +204,7 @@ CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg)
 	if (!var->exists())
 		return CompilerResult::generateError(ErrorCode::VAR_NOT_FOUND);
 
-	CompilerResult inner = compile(node->right, Register::ZERO);
+	CompilerResult inner = compile(node->right, var->reg);
 	RETURN_IF_ERROR(inner);
 	setRegVar(inner.actualTarget, var);
 	inner.instructions.push_back(
@@ -213,8 +215,9 @@ CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg)
 
 
 CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
-	CompilerResult condition = compile(node->condition, targetReg);
+	CompilerResult condition = compile(node->condition, Register::CHOOSE);
 	RETURN_IF_ERROR(condition);
+	freeReg(condition.actualTarget);
 
 	CompilerResult statement = compile(node->statement, targetReg);
 	RETURN_IF_ERROR(statement);
@@ -239,6 +242,36 @@ CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
 		));
 		INSERT_TO_END(condition.instructions, elseBlock.instructions);
 	}
+
+	return condition;
+}
+
+
+CompilerResult Compiler::visitWhile(const WhileNode* node, CBYTE targetReg) {
+	CompilerResult condition = compile(node->condition, Register::CHOOSE);
+	RETURN_IF_ERROR(condition);
+	freeReg(condition.actualTarget);
+
+	CompilerResult statement = compile(node->statement, targetReg);
+	RETURN_IF_ERROR(statement);
+
+	condition.instructions.push_back(InstructionFactory::JMPC(
+		Instruction::Function::EQ,
+		Register::ZERO,
+		condition.actualTarget,
+		(CADDR)statement.instructions.size() + 2
+	));
+
+	INSERT_TO_END(condition.instructions, statement.instructions);
+
+	condition.instructions.push_back(
+		InstructionFactory::JMPC(
+			Instruction::Function::EQ,
+			Register::ZERO,
+			Register::ZERO,
+			0x100 - ((CADDR)condition.instructions.size() + 1) // condition already includes statement instructions
+		)
+	);
 
 	return condition;
 }
@@ -495,7 +528,7 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	bool leftFirst = true;
 
 	// doing literal last requires less registers
-	if (node->rightIsLiteral()) {
+	if (Nodes::isLiteral(node->right)) {
 		first = node->left;
 		second = node->right;
 	} else {
@@ -508,19 +541,29 @@ CompilerResult Compiler::visitBinaryExprConvert(
 	RETURN_IF_ERROR(firstResult);
 
 	// occupy targetReg for inner nodes
-	CompilerResult secondResult = (this->*converter)(second, Register::ZERO);
+	CompilerResult secondResult = (this->*converter)(second, Register::CHOOSE);
 	RETURN_IF_ERROR(secondResult);
+
+	freeRegIfNoVar(firstResult.actualTarget);
+	freeRegIfNoVar(secondResult.actualTarget);
 
 	INSERT_TO_END(firstResult.instructions, secondResult.instructions);
 
+	CBYTE actualTarget = targetReg != Register::CHOOSE
+		? targetReg
+		: Nodes::getTargetFromNodeType(node->left, node->right,
+			firstResult.actualTarget, secondResult.actualTarget, leftFirst);
+
+	occupyReg(actualTarget);
+
 	if (leftFirst)
 		firstResult.instructions.push_back(
-			InstructionFactory::REG(func, firstResult.actualTarget, firstResult.actualTarget, secondResult.actualTarget));
+			InstructionFactory::REG(func, actualTarget, firstResult.actualTarget, secondResult.actualTarget));
 	else
 		firstResult.instructions.push_back(
-			InstructionFactory::REG(func, firstResult.actualTarget, secondResult.actualTarget, firstResult.actualTarget));
+			InstructionFactory::REG(func, actualTarget, secondResult.actualTarget, firstResult.actualTarget));
 
-	firstResult.actualTarget = firstResult.actualTarget;
+	firstResult.actualTarget = actualTarget;
 	return firstResult;
 }
 
@@ -582,7 +625,7 @@ void Compiler::insertPushPopInstructions(CompilerResult& result, CompilerResult&
 
 CBYTE Compiler::getTarget(CBYTE targetReg) {
 	BYTE reg = targetRegValid(targetReg); // 0 if no free reg
-	if (reg != Register::ZERO)
+	if (reg != Register::CHOOSE)
 		return reg;
 	return occupyReg(freeReg(nextFreeableReg()));
 }
@@ -590,7 +633,7 @@ CBYTE Compiler::getTarget(CBYTE targetReg) {
 // Registers 0x0 to 0x2 (IM) cannot be written to, thus they have to be invalid targets
 // still returns 0 when no Register is free
 CBYTE Compiler::targetRegValid(CBYTE targetReg) {
-	return targetReg > Register::IM ? targetReg : occupyReg(nextFreeGPReg());
+	return targetReg > Register::IM && targetReg < Register::GP_MAX ? targetReg : occupyReg(nextFreeGPReg());
 }
 
 CBYTE Compiler::nextFreeGPReg() const {
@@ -623,6 +666,14 @@ bool Compiler::isRegFree(CBYTE reg) const {
 }
 
 CBYTE Compiler::freeReg(CBYTE reg) {
+	currContext_->registers[reg].isOccupied = false;
+	delRegVar(reg);
+	return reg;
+}
+
+CBYTE Compiler::freeRegIfNoVar(CBYTE reg) {
+	if (currContext_->registers[reg].containedVar != nullptr)
+		return Register::ZERO;
 	currContext_->registers[reg].isOccupied = false;
 	delRegVar(reg);
 	return reg;

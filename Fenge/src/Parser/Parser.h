@@ -34,6 +34,7 @@ public:
 	ParserResult parseVarDef();
 	ParserResult parseAssign();
 	ParserResult parseIf();
+	ParserResult parseWhile();
 	ParserResult parseReturn();
 	ParserResult parseLogOr();
 	ParserResult parseLogXor();

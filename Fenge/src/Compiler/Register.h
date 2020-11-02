@@ -18,6 +18,8 @@ public:
 	static CBYTE GP_MAX = 0xE;
 
 	static CBYTE SP = 0xF; // temporary
+
+	static CBYTE CHOOSE = 0xFF;
 };
 
 }

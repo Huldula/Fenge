@@ -85,6 +85,8 @@ ParserResult Parser::parseStatement() {
 		return parseReturn();
 	} else if (Token::isIfKeyword(currentToken_)) {
 		return parseIf();
+	} else if (Token::isWhileKeyword(currentToken_)) {
+		return parseWhile();
 	} else if (currentToken_->type() == Token::Type::LBRACE) {
 		return parseBlock();
 	} else if (Token::isSemicolonType(currentToken_->type())) {
@@ -199,6 +201,27 @@ ParserResult Parser::parseIf() {
 	}
 
 	return ParserResult{ Error(), (Node*)new IfNode(condition.node, statement.node, elseNode) };
+}
+
+ParserResult Parser::parseWhile() {
+	if (!Token::isWhileKeyword(currentToken_))
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+	if (currentToken_->type() != Token::Type::LPAREN)
+		return ParserResult{ Error(ErrorCode::ILLEGAL_TOKEN) };
+	advance();
+	ParserResult condition = parseAssign();
+	if (condition.error.isError())
+		return condition;
+	if (currentToken_->type() != Token::Type::RPAREN)
+		return ParserResult{ Error(ErrorCode::RPAREN_EXPECTED) };
+	advance();
+
+	ParserResult statement = parseStatement();
+	if (statement.error.isError())
+		return statement;
+
+	return ParserResult{ Error(), (Node*)new WhileNode(condition.node, statement.node) };
 }
 
 ParserResult Parser::parseReturn() {

@@ -134,6 +134,10 @@ bool Token::isIfKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::IF;
 }
 
+bool Token::isWhileKeyword(Token* token) {
+	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::WHILE;
+}
+
 bool Token::isElseKeyword(Token* token) {
 	return token->type() == Type::KEYWORD && *(Keyword*)token->value() == Keyword::ELSE;
 }
