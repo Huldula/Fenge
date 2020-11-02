@@ -57,6 +57,7 @@ private:
 	CompilerResult visitIf(const IfNode* node, CBYTE targetReg);
 	CompilerResult visitFuncCall(const FuncCallNode* node);
 	CompilerResult visitArgList(const BinaryNode* node, CBYTE targetReg);
+	CompilerResult visitArg(const Node* node, CBYTE targetReg);
 	CompilerResult visitLogOr(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogXor(const BinaryNode* node, CBYTE targetReg);
 	CompilerResult visitLogAnd(const BinaryNode* node, CBYTE targetReg);

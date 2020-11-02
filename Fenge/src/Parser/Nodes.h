@@ -130,6 +130,11 @@ public:
 			|| right->type() == Node::Type::ASSIGN
 			&& ((AssignNode*)right)->right->type() == Node::Type::LITERAL;
 	}
+
+	bool isArgList() const {
+		return type() == Node::Type::BINARY
+			&& op->type() == Token::Type::COMMA;
+	}
 };
 
 class FuncDefNode : Node {

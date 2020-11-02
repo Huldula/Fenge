@@ -249,13 +249,13 @@ CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
 	const std::string& name = node->nameOfVar();
 
 	if (node->argList == nullptr) {
-	} else if (node->argList->type() == Node::Type::BINARY
-		&& ((BinaryNode*)node->argList)->op->type() == Token::Type::COMMA) {
-		result = visitArgList((BinaryNode*)node->argList, Register::RET);
+	} else if (((BinaryNode*)node->argList)->isArgList()) {
+		result = visitArgList((BinaryNode*)node->argList, occupyReg(Register::RET));
 	} else {
-		result = compile(node->argList, Register::RET);
+		result = visitArg(node->argList, Register::RET);
 	}
 	RETURN_IF_ERROR(result);
+	freeArgs();
 
 	result.actualTarget = Register::RET;
 	Instruction* ins = InstructionFactory::CALL(Register::ZERO, 0 /* Linker will set this value after compilation */);
@@ -270,18 +270,30 @@ CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
 }
 
 CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
-	CompilerResult left = compile(node->left, targetReg);
+	CompilerResult left = ((BinaryNode*)node->left)->isArgList()
+		? visitArgList((BinaryNode*)node->left, targetReg)
+		: compile(node->left, targetReg);
 	RETURN_IF_ERROR(left);
 
-	CBYTE reg0 = nextFreeArgReg();
-	freeReg(reg0);
-	CompilerResult right = node->right->type() == Node::Type::ASSIGN
-		? compile(node->right, reg0)
-		: visitArgList((BinaryNode*)node->right, reg0);
+	CompilerResult right = visitArg(node->right, occupyReg(nextFreeArgReg()));
 	RETURN_IF_ERROR(right);
 
 	INSERT_TO_END(left.instructions, right.instructions);
 	return left;
+}
+
+
+CompilerResult Compiler::visitArg(const Node* node, CBYTE targetReg) {
+	CompilerResult res = compile(node, targetReg);
+	RETURN_IF_ERROR(res);
+
+	if (res.actualTarget != targetReg) {
+		res.instructions.push_back(
+			InstructionFactory::REG(Instruction::Function::MOV, targetReg, res.actualTarget, res.actualTarget)
+		);
+	}
+
+	return res;
 }
 
 
