@@ -12,6 +12,9 @@ public:
 	}
 
 	static Instruction* REG(const Instruction::Function func, CBYTE rw, CBYTE rr1, CBYTE rr2) {
+		if (func == Instruction::Function::MOV) {
+			return InstructionFactory::REG(Instruction::Function::ADD, rw, rr1, 0);
+		}
 		return new Instruction(
 			(int)Instruction::Opcode::REG
 			+ (rw << 4)

@@ -1,0 +1,5 @@
+int display(int col, int line) {
+	extern {
+		0x134101
+	};
+};

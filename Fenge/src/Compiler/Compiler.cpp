@@ -316,7 +316,7 @@ CompilerResult Compiler::visitFuncCall(const FuncCallNode* node) {
 CompilerResult Compiler::visitArgList(const BinaryNode* node, CBYTE targetReg) {
 	CompilerResult left = ((BinaryNode*)node->left)->isArgList()
 		? visitArgList((BinaryNode*)node->left, targetReg)
-		: compile(node->left, targetReg);
+		: visitArg(node->left, targetReg);
 	RETURN_IF_ERROR(left);
 
 	CompilerResult right = visitArg(node->right, occupyReg(nextFreeArgReg()));
@@ -335,6 +335,7 @@ CompilerResult Compiler::visitArg(const Node* node, CBYTE targetReg) {
 		res.instructions.push_back(
 			InstructionFactory::REG(Instruction::Function::MOV, targetReg, res.actualTarget, res.actualTarget)
 		);
+		res.actualTarget = targetReg;
 	}
 
 	return res;
@@ -598,10 +599,10 @@ CompilerResult Compiler::compileBool(const Node* node, CBYTE targetReg) {
 void Compiler::convertToBoolIfNecessary(std::vector<Instruction*>& instructions, const Node* node, CBYTE targetReg) const {
 	bool isBool = false;
 	if (node->type() == Node::Type::BINARY) {
-		if (Token::isLogType(((BinaryNode*)node)->op->type()))
+		if (Token::isBoolType(((BinaryNode*)node)->op->type()))
 			isBool = true;
 	} else if (node->type() == Node::Type::UNARY) {
-		if (Token::isLogType(((UnaryNode*)node)->op->type()))
+		if (Token::isBoolType(((UnaryNode*)node)->op->type()))
 			isBool = true;
 	}
 	if (!isBool)

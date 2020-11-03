@@ -65,6 +65,15 @@ bool Token::isLogType(Type type) {
 	return isLogOrType(type) || isLogXorType(type) || isLogAndType(type) || type == Type::LOG_NOT;
 }
 
+bool Token::isCompType(Type type) {
+	return type == Type::GT || type == Type::GTE || type == Type::LT
+		|| type == Type::LTE || type == Type::EE || type == Type::NE;
+}
+
+bool Token::isBoolType(Type type) {
+	return isLogType(type) || isCompType(type);
+}
+
 
 bool Token::isSemicolonType(Type type) {
 	return type == Type::SEMICOLON;

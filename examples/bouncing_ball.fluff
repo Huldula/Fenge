@@ -5,16 +5,23 @@ int display(int col, int line) {
 };
 
 int ballX = 8;
-int ballY = 5;
+int ballY = 8;
 int velX = 1;
 int velY = 1;
 
 while(1) {
-	if (ballX < 1)
+	if (ballX < 2 || ballX > 0x7FFF)
 		velX = -velX;
-	if (ballY > 15)
+	if (ballY > 14 || ballY < 1)
 		velY = -velY;
-	ballX = ballX >> velX;
+
+	if (velX == 1) {
+		ballX = ballX << 1;
+	} else {
+		ballX = ballX >> 1;
+	};
+
+	display(ballY, 0);
 	ballY = ballY + velY;
 
 	display(ballY, ballX);

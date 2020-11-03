@@ -19,6 +19,8 @@ public:
 	static bool isLiteralType(Type type);
 	static bool isUnaryType(Token* token);
 	static bool isLogType(Type type);
+	static bool isCompType(Type type);
+	static bool isBoolType(Type type);
 
 	static bool isSemicolonType(Type type);
 	static bool isCommaType(Type type);
