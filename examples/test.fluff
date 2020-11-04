@@ -3,3 +3,9 @@ int display(int col, int line) {
 		0x134101
 	};
 };
+
+
+int i = 0;
+if (i = 1 == 1) {
+	i = 2;
+}

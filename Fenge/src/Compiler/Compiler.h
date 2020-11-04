@@ -89,6 +89,7 @@ private:
 	void insertPushPopInstructions(CompilerResult& result, CompilerResult& statementRes);
 
 	CBYTE getTarget(CBYTE targetReg);
+	CBYTE getTargetStoreVar(CBYTE targetReg, std::vector<Instruction*>& instructions);
 	CBYTE targetRegValid(CBYTE targetReg);
 
 	CBYTE nextFreeGPReg() const;

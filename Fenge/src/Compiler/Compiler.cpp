@@ -163,11 +163,13 @@ CompilerResult Compiler::visitParam(const ParameterNode* node) {
 	Variable* var = new Variable(name, node->datatype(), nextFreeArgReg(), addr0);
 	currContext_->variables.push_back(var);
 
-	auto instructions = std::vector<Instruction*>({
-		InstructionFactory::ST(Register::SP, var->reg, var->addr)
-		});
+	//auto instructions = std::vector<Instruction*>({
+	//	InstructionFactory::ST(Register::SP, var->reg, var->addr)
+	//	});
+	//setRegVar(var->reg, var);
+	//return CompilerResult(instructions, var->reg);
 	setRegVar(var->reg, var);
-	return CompilerResult(instructions, var->reg);
+	return CompilerResult(std::vector<Instruction*>(), var->reg);
 }
 
 
@@ -184,17 +186,20 @@ CompilerResult Compiler::visitVarDef(const AssignNode* node, CBYTE targetReg) {
 	const std::string& name = node->nameOfVar();
 	if (currContext_->findVariableInContext(name)->exists())
 		return CompilerResult::generateError(ErrorCode::VAR_ALREADY_EXISTS);
-
-	CompilerResult inner = compile(node->right, targetReg);
+	auto instructions = std::vector<Instruction*>();
+	CBYTE actualTarget = getTargetStoreVar(targetReg, instructions);
+	CompilerResult inner = compile(node->right, actualTarget);
 	RETURN_IF_ERROR(inner);
+
+	INSERT_TO_BEGIN(inner.instructions, instructions);
 
 	CADDR addr0 = currContext_->stackMalloc();
 	Variable* var = new Variable(name, node->datatype(), inner.actualTarget, addr0);
 	currContext_->variables.push_back(var);
 
-	inner.instructions.push_back(
-		InstructionFactory::ST(Register::SP, var->reg, var->addr)
-	);
+	//Instruction* store = InstructionFactory::ST(Register::SP, var->reg, var->addr);
+	//inner.instructions.push_back(store);
+	//var->storeInstructions.push_back(store);
 	setRegVar(var->reg, var);
 	return inner;
 }
@@ -209,9 +214,9 @@ CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg)
 	CompilerResult inner = compile(node->right, var->reg);
 	RETURN_IF_ERROR(inner);
 	setRegVar(inner.actualTarget, var);
-	inner.instructions.push_back(
-		InstructionFactory::ST(Register::SP, var->reg, var->addr)
-	);
+	//Instruction* store = InstructionFactory::ST(Register::SP, var->reg, var->addr);
+	//inner.instructions.push_back(store);
+	//var->storeInstructions.push_back(store);
 	return inner;
 }
 
@@ -219,7 +224,7 @@ CompilerResult Compiler::visitVarAssign(const AssignNode* node, CBYTE targetReg)
 CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
 	CompilerResult condition = compile(node->condition, Register::CHOOSE);
 	RETURN_IF_ERROR(condition);
-	freeReg(condition.actualTarget);
+	freeRegIfNoVar(condition.actualTarget);
 
 	CompilerResult statement = compile(node->statement, targetReg);
 	RETURN_IF_ERROR(statement);
@@ -252,7 +257,7 @@ CompilerResult Compiler::visitIf(const IfNode* node, CBYTE targetReg) {
 CompilerResult Compiler::visitWhile(const WhileNode* node, CBYTE targetReg) {
 	CompilerResult condition = compile(node->condition, Register::CHOOSE);
 	RETURN_IF_ERROR(condition);
-	freeReg(condition.actualTarget);
+	freeRegIfNoVar(condition.actualTarget);
 
 	CompilerResult statement = compile(node->statement, targetReg);
 	RETURN_IF_ERROR(statement);
@@ -271,7 +276,7 @@ CompilerResult Compiler::visitWhile(const WhileNode* node, CBYTE targetReg) {
 			Instruction::Function::EQ,
 			Register::ZERO,
 			Register::ZERO,
-			0x100 - ((CADDR)condition.instructions.size() + 1) // condition already includes statement instructions
+			0x100 - (CADDR)condition.instructions.size() // condition already includes statement instructions
 		)
 	);
 
@@ -515,16 +520,16 @@ CompilerResult Compiler::visitSimple(const LiteralNode* node, CBYTE targetReg) {
 		if (var->reg) {
 			return CompilerResult(std::vector<Instruction*>(), var->reg);
 		} else {
-			CBYTE actualTarget = getTarget(targetReg);
-			return CompilerResult(std::vector<Instruction*>({
-				InstructionFactory::LD(actualTarget, Register::SP, var->addr)
-				}), actualTarget);
+			auto instructions = std::vector<Instruction*>();
+			CBYTE actualTarget = getTargetStoreVar(targetReg, instructions);
+			instructions.push_back(InstructionFactory::LD(actualTarget, Register::SP, var->addr));
+			return CompilerResult(instructions, actualTarget);
 		}
 	} else {
-		CBYTE actualTarget = getTarget(targetReg);
-		return CompilerResult(std::vector<Instruction*>({
-			InstructionFactory::LI(actualTarget, *(int*)node->token->value())
-			}), actualTarget);
+		auto instructions = std::vector<Instruction*>();
+		CBYTE actualTarget = getTargetStoreVar(targetReg, instructions);
+		instructions.push_back(InstructionFactory::LI(actualTarget, *(int*)node->token->value()));
+		return CompilerResult(instructions, actualTarget);
 	}
 }
 
@@ -643,6 +648,17 @@ CBYTE Compiler::getTarget(CBYTE targetReg) {
 	return occupyReg(freeReg(nextFreeableReg()));
 }
 
+CBYTE Compiler::getTargetStoreVar(CBYTE targetReg, std::vector<Instruction*>& instructions) {
+	BYTE reg = targetRegValid(targetReg); // 0 if no free reg
+	if (reg != Register::CHOOSE)
+		return reg;
+	CBYTE newReg = nextFreeableReg();
+	instructions.push_back(
+		InstructionFactory::ST(Register::SP, newReg, currContext_->registers[newReg].containedVar->addr)
+	);
+	return occupyReg(freeReg(newReg));
+}
+
 // Registers 0x0 to 0x2 (IM) cannot be written to, thus they have to be invalid targets
 // still returns 0 when no Register is free
 CBYTE Compiler::targetRegValid(CBYTE targetReg) {
@@ -654,7 +670,7 @@ CBYTE Compiler::nextFreeGPReg() const {
 		if (isRegFree(reg)) 
 			return reg;
 	}
-	return 0;
+	return Register::CHOOSE;
 }
 
 CBYTE Compiler::nextFreeArgReg() const {
@@ -688,7 +704,6 @@ CBYTE Compiler::freeRegIfNoVar(CBYTE reg) {
 	if (currContext_->registers[reg].containedVar != nullptr)
 		return Register::ZERO;
 	currContext_->registers[reg].isOccupied = false;
-	delRegVar(reg);
 	return reg;
 }
 
