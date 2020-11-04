@@ -9,11 +9,21 @@ int ballY = 8;
 int velX = 1;
 int velY = 1;
 
+int ballX0 = 16;
+int ballY0 = 12;
+int velX0 = 1;
+int velY0 = -1;
+
 while(1) {
 	if (ballX < 2 || ballX > 0x7FFF)
 		velX = -velX;
 	if (ballY > 14 || ballY < 1)
 		velY = -velY;
+		
+	if (ballX0 < 2 || ballX0 > 0x7FFF)
+		velX0 = -velX0;
+	if (ballY0 > 14 || ballY0 < 1)
+		velY0 = -velY0;
 
 	if (velX == 1) {
 		ballX = ballX << 1;
@@ -21,8 +31,17 @@ while(1) {
 		ballX = ballX >> 1;
 	};
 
+	if (velX0 == 1) {
+		ballX0 = ballX0 << 1;
+	} else {
+		ballX0 = ballX0 >> 1;
+	};
+
 	display(ballY, 0);
 	ballY = ballY + velY;
-
 	display(ballY, ballX);
+
+	display(ballY0, 0);
+	ballY0 = ballY0 + velY0;
+	display(ballY0, ballX0);
 };

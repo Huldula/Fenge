@@ -662,7 +662,7 @@ CBYTE Compiler::getTargetStoreVar(CBYTE targetReg, std::vector<Instruction*>& in
 // Registers 0x0 to 0x2 (IM) cannot be written to, thus they have to be invalid targets
 // still returns 0 when no Register is free
 CBYTE Compiler::targetRegValid(CBYTE targetReg) {
-	return targetReg > Register::IM && targetReg < Register::GP_MAX ? targetReg : occupyReg(nextFreeGPReg());
+	return targetReg > Register::IM && targetReg <= Register::GP_MAX ? targetReg : occupyReg(nextFreeGPReg());
 }
 
 CBYTE Compiler::nextFreeGPReg() const {

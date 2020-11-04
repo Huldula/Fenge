@@ -1,0 +1,111 @@
+NOP
+LI f   8
+
+
+
+
+LI 8   8
+LI 9   8
+LI a   1
+LI b   1
+
+
+LI c   10
+LI d   c
+LI e   1
+ST  f 8 fff
+LI 8   1
+SUB 8 0 8
+
+
+ST  f 8 ff8
+LI 8   1
+JMPC EQ  0 8 4f
+
+
+LD 8 f  fff
+ST  f 9 ffe
+LI 9   7fff
+GR 9 8 9
+
+LD 8 f  fff
+ST  f a ffd
+LI a   2
+LS a 8 a
+OR a a 9
+JMPC EQ  0 a 3
+LD 8 f  ffd
+SUB 0 0 8
+LD 9 f  ffe
+LI a   1
+LS a 9 a
+LD 9 f  ffe
+ST  f b ffc
+LI b   e
+GR b 9 b
+OR b b a
+JMPC EQ  0 b 3
+LD 9 f  ffc
+SUB 0 0 9
+LI a   7fff
+GR a c a
+LI b   2
+LS b c b
+OR b b a
+JMPC EQ  0 b 2
+SUB e 0 e
+LI a   1
+LS a d a
+LI b   e
+GR b d b
+OR b b a
+JMPC EQ  0 b 3
+LD a f  ff8
+SUB 0 0 a
+LD b f  ffd
+ST  f c ffb
+LI c   1
+EQ c b c
+JMPC EQ  0 c 5
+LD b f  fff
+LI c   1
+SHL 0 b c
+JMPC EQ  0 0 4
+LD b f  fff
+LI c   1
+SHR 0 b c
+LI b   1
+EQ b e b
+JMPC EQ  0 b 5
+LD b f  ffb
+LI c   1
+SHL 0 b c
+JMPC EQ  0 0 4
+LD b f  ffb
+LI c   1
+SHR 0 b c
+LD 3 f  ffe
+LI 4   0
+CALL 0   5e
+LD b f  ffe
+LD c f  ffc
+ADD 0 b c
+LD 3 f  ffe
+LD 4 f  fff
+CALL 0   5e
+ADD 3 d 0
+LI 4   0
+CALL 0   5e
+LD b f  ff8
+ADD d d b
+ADD 3 d 0
+LD 4 f  ffb
+CALL 0   5e
+JMPC EQ  0 0 b0
+HLT
+LI 0   2
+ADD f f 2
+DSPL 0 4 3
+LI 0   2
+SUB f f 2
+RET
